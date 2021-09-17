@@ -238,13 +238,13 @@ namespace Net.Data
 
         public async Task<ResultadoTransaccion<string>> EnviarComprobanteElectronica(string tipocomprobante, string comprobante)
         {
+
             string tipoCodigoBarraHash = string.Empty;
             string otorgamiento = string.Empty;
             string strURL = string.Empty;
 
             ResultadoTransaccion<string> resultadoTransaccionError = new ResultadoTransaccion<string>();
-
-            ResultadoTransaccion<BE_ComprobanteElectronico> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronico>();
+            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
 
             SerieRepository serieRepository = new SerieRepository(context, _configuration);
             ResultadoTransaccion<BE_SerieConfig> resultadoTransSerie = new ResultadoTransaccion<BE_SerieConfig>();
@@ -457,8 +457,11 @@ namespace Net.Data
                         wCodigoHash = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<CodigoHash>", "</CodigoHash>");
                         wCodigoBarra = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<CodigoBarras>", "</CodigoBarras>");
 
+                        //vResultadoTransaccion.data. = false;
+
                         //'zFarmacia.Sp_ComprobantesElectronicos_Update "codigohash", wCodigoHash, "", wCodcomprobante
                         //--> zEfact.ConvertirCodigoBarraJPG wCodcomprobante, wCodigoBarra, zFarmacia2
+                        vResultadoTransaccion.IdRegistro = -1;
                     }
                     else
                     {
@@ -466,8 +469,11 @@ namespace Net.Data
                         //'wCadena = xml_document.selectSingleNode(ResultStatus & "Cadena").Text
                         wCadenaRpta = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<Cadena>", "</Cadena>");
                         //EnviarCorreo_Error wCodcomprobante, wCadenaRpta
+                        //vResultadoTransaccion.data = "wStatus";
+                        //var result = new { xml = "xml", wOtorgar = "" };
 
-                        vResultadoTransaccion.IdRegistro = -1;
+                        //vResultadoTransaccion.data = result;
+                        vResultadoTransaccion.IdRegistro = 0;
                         vResultadoTransaccion.ResultadoCodigo = -1;
                         vResultadoTransaccion.ResultadoDescripcion = "Metodo enviar " + comprobante;
                     }
@@ -478,12 +484,88 @@ namespace Net.Data
                     vResultadoTransaccion.ResultadoCodigo = -1;
                     vResultadoTransaccion.ResultadoDescripcion = "Error al invocar WebService : InvokeWebService_CSF " + comprobante;
                 }
+
             }
 
             return resultadoTransaccionError;
         }
 
-        private async Task<ResultadoTransaccion<BE_ComprobanteElectronico>> GetComprobantesElectronicosXml(string codcomprobante, int orden)
+
+        //public async Task<ResultadoTransaccion<object>> VentaCaja_InvokeWebService_TCI(string comprobante, string strXml,string otorgamiento)
+        //{
+
+        //    string strURL = "http://200.106.52.10/WS_TCI/Service.asmx?wsdl";
+        //    string strSOAPAction = "http://tempuri.org/Registrar";
+
+        //    ResultadoTransaccion<object> resultadoTransaccion = new ResultadoTransaccion<object>();
+
+        //    //'I-Call PostWebservice y Leer rpta de TCI - usando code de csf
+        //    DOMDocument30 xmlResponse = new DOMDocument30();
+        //    string wResponseXML = string.Empty;
+        //    string wResponseTXT = string.Empty;
+        //    string wCodigoHash = string.Empty;
+        //    string wCodigoBarra = string.Empty;
+        //    string wCadenaRpta = string.Empty;
+
+        //    ComprobanteElectronicaTCIXml comprobanteElectronicaTCIXml = new ComprobanteElectronicaTCIXml();
+
+        //    if (comprobanteElectronicaTCIXml.InvokeWebServiceTCI(strXml.Trim(), strSOAPAction, strURL, xmlResponse))
+        //    {
+        //        wResponseXML = xmlResponse.xml;
+        //        wResponseTXT = xmlResponse.text;
+
+        //        //'I-Leer parametro de salida Retorno(true/false) para saber si se registró en SUNAT - (Ref: AgregarPacientesCSFaTisal)
+        //        string ResultStatus;
+        //        string wStatus;
+        //        DOMDocument xml_document;
+        //        xml_document = new DOMDocument();
+
+        //        xml_document.loadXML(wResponseXML);
+        //        ResultStatus = "/soap:Envelope/soap:Body/RegistrarResponse/";
+        //        wStatus = xml_document.selectSingleNode(ResultStatus + "RegistrarResult").text;
+
+        //        if (wStatus == "")
+        //        {
+
+        //            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
+
+        //            vResultadoTransaccion = await ModificarComprobanteElectronico("fecha_registro_rpta", "", "", comprobante);
+        //            vResultadoTransaccion = await ModificarComprobanteElectronico("tipo_otorgamiento", otorgamiento, "", comprobante);
+        //            vResultadoTransaccion = await ModificarComprobanteElectronico("xml_registro", "", strXml.Trim(), comprobante);
+        //            wStatus = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<RegistrarResult>", "</RegistrarResult>");
+        //            wCadenaRpta = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<Cadena>", "</Cadena>");
+        //            vResultadoTransaccion = await ModificarComprobanteElectronico("observacion_registro", wStatus + "; " + wCadenaRpta.Substring(0, 3980), "", comprobante);
+        //            wCodigoHash = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<CodigoHash>", "</CodigoHash>");
+        //            wCodigoBarra = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<CodigoBarras>", "</CodigoBarras>");
+
+        //            //vResultadoTransaccion.data. = false;
+        //            vResultadoTransaccion.IdRegistro = -1;
+        //        }
+        //        else
+        //        {
+                    
+        //            wCadenaRpta = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<Cadena>", "</Cadena>");
+        //            var result = new { xml = "xml", wOtorgar = "" };
+
+        //            resultadoTransaccion.data = result;
+        //            resultadoTransaccion.IdRegistro = 0;
+        //            resultadoTransaccion.ResultadoCodigo = -1;
+        //            resultadoTransaccion.ResultadoDescripcion = "Metodo enviar " + comprobante;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        resultadoTransaccion.IdRegistro = -1;
+        //        resultadoTransaccion.ResultadoCodigo = -1;
+        //        resultadoTransaccion.ResultadoDescripcion = "Error al invocar WebService : InvokeWebService_CSF " + comprobante;
+        //    }
+
+        //    return resultadoTransaccion;
+
+        //}
+
+
+        public async Task<ResultadoTransaccion<BE_ComprobanteElectronico>> GetComprobantesElectronicosXml(string codcomprobante, int orden)
         {
             ResultadoTransaccion<BE_ComprobanteElectronico> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronico>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -577,9 +659,9 @@ namespace Net.Data
             return vResultadoTransaccion;
         }
 
-        private async Task<ResultadoTransaccion<BE_ComprobanteElectronico>> ModificarComprobanteElectronico(string campo, string nuevoValor, string XML, string codigo)
+        public async Task<ResultadoTransaccion<string>> ModificarComprobanteElectronico(string campo, string nuevoValor, string XML, string codigo)
         {
-            ResultadoTransaccion<BE_ComprobanteElectronico> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronico>();
+            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
 
             vResultadoTransaccion.NombreMetodo = _metodoName;
@@ -617,5 +699,6 @@ namespace Net.Data
 
             return vResultadoTransaccion;
         }
+
     }
 }

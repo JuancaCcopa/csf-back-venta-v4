@@ -306,7 +306,6 @@ namespace Net.Business.Services.Controllers
                 // code 28
 
                 var objectGetAllTC = await _repository.TipoCambio.GetObtieneTipoCambio();
-
                 if (objectGetAllTC.ResultadoCodigo == -1)
                 {
                     return BadRequest(objectGetAllTC);
@@ -324,7 +323,8 @@ namespace Net.Business.Services.Controllers
 
                 var setDatos = value.RetornaComprobanteCabecera();
 
-                var objComprobante = await _repository.VentaCaja.ComprobantesRegistrar(setDatos, value.tipoComprobante.Substring(0, 1), value.correo, value.codTipoAfectacionIgv, value.wFlg_electronico, value.maquina);
+                var objComprobante = await _repository.VentaCaja.ComprobantesRegistrar(setDatos, value.tipoComprobante.Substring(0, 1), value.correo, value.codTipoAfectacionIgv, value.wFlg_electronico, value.maquina, value.idePagosBot, value.flgPagoUsado,value.flg_otorgar,value.tipoCodigoBarrahash.ToString(), wStrURL);
+
 
                 if (objComprobante.IdRegistro == 0)
                 {

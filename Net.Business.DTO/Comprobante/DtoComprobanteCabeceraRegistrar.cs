@@ -31,6 +31,7 @@ namespace Net.Business.DTO
         public string codTipoCliente { get; set; }
         public virtual List<DtoComprobanteTipoPagoRegistrar> tipoPagos { get; set; }
         public long idePagosBot { get; set; }
+        public bool flgPagoUsado { get; set; }
 
         //public string serie { get; set; }
         //public int gratuito { get; set; }
@@ -38,6 +39,9 @@ namespace Net.Business.DTO
         //extra
         public bool wFlg_electronico { get; set; } //para sacar la ruta del webservices
         public decimal tipoCambioVenta { get; set; }
+        public int flg_otorgar { get; set; }
+        //public string tipoCodigo { get; set; }
+        public int tipoCodigoBarrahash { get; set; }
 
         public BE_Comprobante RetornaComprobanteCabecera() {
 

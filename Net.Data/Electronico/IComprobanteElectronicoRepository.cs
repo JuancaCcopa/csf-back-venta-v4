@@ -10,5 +10,7 @@ namespace Net.Data
         Task<int> Registrar(string codcomprobante, string tipoCodigo_BarraHash, string tipoOtorgamiento, string Xml);
         //Task<ResultadoTransaccion<BE_ComprobanteElectronico>> ModificarComprobanteElectronico(string campo, string nuevoValor, string XML, string codigo);
         Task<ResultadoTransaccion<string>> EnviarComprobanteElectronica(string tipocomprobante, string comprobante);
+        //Task<ResultadoTransaccion<object>> VentaCaja_InvokeWebService_TCI(string comprobante, string strXml, string otorgamiento);
+
     }
 }

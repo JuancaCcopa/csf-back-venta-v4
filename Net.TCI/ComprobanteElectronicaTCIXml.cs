@@ -26,7 +26,7 @@ namespace Net.TCI
             //' ------------------- Invocación del Web Service
             string XML_Cabecera;
 
-            XML_Cabecera = GetComprobateElectronicoCabeceraXml(response);
+            XML_Cabecera = f_ENComprobante_LOG(response);
 
             if (XML_Cabecera != "")
             {
@@ -60,7 +60,7 @@ namespace Net.TCI
             return 0;
         }
 
-        private string GetComprobateElectronicoCabeceraXml(List<BE_ComprobanteElectronico> response)
+        public string f_ENComprobante_LOG(List<BE_ComprobanteElectronico> response)
         {
             //
             string XMLT;

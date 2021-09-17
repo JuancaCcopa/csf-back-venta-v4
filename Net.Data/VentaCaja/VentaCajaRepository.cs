@@ -16,6 +16,8 @@ using System.IO;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using Net.Connection.ServiceLayer;
+using MSXML2;
+using Net.TCI;
 //using System.Collections.ObjectModel;
 //using Microsoft.Web.Services3.Messaging;
 //using CSFDLLEFACT.WsTci;
@@ -47,7 +49,10 @@ namespace Net.Data
         const string SP_GET_CORRELATIVO_CONSULTA = DB_ESQUEMA + "Sp_Correlativo_Consulta";
         //--------
         const string SP_COMPROBANTE_INSERT = DB_ESQUEMA + "VEN_Comprobantes_Ins";
+        const string SP_COMPROBANTE_ELECTRONICO_UPDATE = DB_ESQUEMA + "VEN_ComprobantesElectronicos_Update"; //clinica
         //--------
+        const string SP_MDSYNPAGOS_UPDATE_CAMPOS = DB_ESQUEMA + "VEN_MdsynPagos_UpdatexCampo";
+
 
         const string SP_GET_DATOCARDCODE_CONSULTAR = DB_ESQUEMA + "VEN_DatoCardCode_Consulta";
         const string SP_POST_COMPROBANTE_VAL_UPDATE = DB_ESQUEMA + "VEN_ComprobantesValUpd";
@@ -55,6 +60,7 @@ namespace Net.Data
         const string SP_POST_COMPROBANTE_ELECTRONICO_POR_CODCOMPROBANTE_TK = DB_ESQUEMA + "VEN_ComprobantesElectronicos_Consulta";
         const string SP_POST_COMPROBANTE_ELECTRONICO_POR_CODCOMPROBANTE_VB = DB_ESQUEMA + "VEN_ComprobantesElectronicos_ConsultaVB";
         const string SP_POST_COMPROBANTE_ELECTRONICO_LOG_XML_CAB_PRINT = DB_ESQUEMA + "VEN_ComprobantesElectronicosLOG_XML_Cab_Print";
+        const string SP_POST_COMPROBANTE_ELECTRONICO_LOG_XML_CAB = DB_ESQUEMA + "VEN_ComprobantesElectronicosLOG_XML_Cab";
         const string SP_GET_TABLAS_CODIGO_TIPO_TARJETA = DB_ESQUEMA + "VEN_TablasCodigoTipoTarjetaGet";
         const string SP_GET_TABLAS_CODIGO_BANCO = DB_ESQUEMA + "VEN_TablasCodigoBancoGet";
 
@@ -186,7 +192,7 @@ namespace Net.Data
                         {
                             while (await reader.ReadAsync())
                             {
-                                existeVentaAnualda = ((reader["ExiteAnulacion"]) is DBNull)? 0 : (int)reader["ExiteAnulacion"];
+                                existeVentaAnualda = ((reader["ExiteAnulacion"]) is DBNull) ? 0 : (int)reader["ExiteAnulacion"];
                             }
                         }
                     }
@@ -201,7 +207,7 @@ namespace Net.Data
 
         }
 
-        public async Task<ResultadoTransaccion<BE_VentasCabecera>> ComprobanteElectronicoUpd(string campo,string nuevovalor,string xml, Byte[] codigobarrajpg,string codigo)
+        public async Task<ResultadoTransaccion<BE_VentasCabecera>> ComprobanteElectronicoUpd(string campo, string nuevovalor, string xml, Byte[] codigobarrajpg, string codigo)
         {
             ResultadoTransaccion<BE_VentasCabecera> vResultadoTransaccion = new ResultadoTransaccion<BE_VentasCabecera>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -240,14 +246,14 @@ namespace Net.Data
             {
                 vResultadoTransaccion.IdRegistro = -1;
                 vResultadoTransaccion.ResultadoCodigo = -1;
-                vResultadoTransaccion.ResultadoDescripcion = "Error al actualizar el archivo en la Base de Datos. Posibles errores: 1.- Ya sea porque existe el archivo en la BD. 2.- No se encuentra registrado el comprobante en la BD por eso no puede actualizar. otros:"+ ex.Message.ToString();
+                vResultadoTransaccion.ResultadoDescripcion = "Error al actualizar el archivo en la Base de Datos. Posibles errores: 1.- Ya sea porque existe el archivo en la BD. 2.- No se encuentra registrado el comprobante en la BD por eso no puede actualizar. otros:" + ex.Message.ToString();
             }
 
             return vResultadoTransaccion;
 
         }
 
-        public async Task<ResultadoTransaccion<string>> GetDatoCardCodeConsulta(string tipoCliente,string codCliente)
+        public async Task<ResultadoTransaccion<string>> GetDatoCardCodeConsulta(string tipoCliente, string codCliente)
         {
             ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -359,7 +365,7 @@ namespace Net.Data
 
         }
 
-        public async Task<ResultadoTransaccion<AsegContPaci>> GetRucConsultav2PorFiltro(string codPaciente,string codAseguradora,string codCia)
+        public async Task<ResultadoTransaccion<AsegContPaci>> GetRucConsultav2PorFiltro(string codPaciente, string codAseguradora, string codCia)
         {
             ResultadoTransaccion<AsegContPaci> vResultadoTransaccion = new ResultadoTransaccion<AsegContPaci>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -511,7 +517,7 @@ namespace Net.Data
 
         }
 
-        public async Task<ResultadoTransaccion<B_MdsynPagos>> GetMdsynPagosConsulta(long ide_pagos_bot, int ide_mdsyn_reserva, int ide_correl_reserva,string cod_liquidacion,string cod_venta,int orden)
+        public async Task<ResultadoTransaccion<B_MdsynPagos>> GetMdsynPagosConsulta(long ide_pagos_bot, int ide_mdsyn_reserva, int ide_correl_reserva, string cod_liquidacion, string cod_venta, int orden)
         {
             ResultadoTransaccion<B_MdsynPagos> vResultadoTransaccion = new ResultadoTransaccion<B_MdsynPagos>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -544,7 +550,7 @@ namespace Net.Data
                             while (await reader.ReadAsync())
                             {
                                 if (orden.Equals(2))
-                                { 
+                                {
                                     response.number = ((reader["number"]) is DBNull) ? 0 : (long)reader["number"];
                                     response.amount = ((reader["amount"]) is DBNull) ? 0 : (decimal)reader["amount"];
                                     response.cust_name = ((reader["cust_name"]) is DBNull) ? string.Empty : (string)reader["cust_name"];
@@ -633,15 +639,16 @@ namespace Net.Data
                             while (await reader.ReadAsync())
                             {
 
-                               var  objVista = new { 
-                                    fecha1 = ((reader["fecha1"]) is DBNull) ? string.Empty : reader["fecha1"].ToString(), 
+                                var objVista = new
+                                {
+                                    fecha1 = ((reader["fecha1"]) is DBNull) ? string.Empty : reader["fecha1"].ToString(),
                                     fecha2 = ((reader["fecha1"]) is DBNull) ? string.Empty : reader["fecha1"].ToString(),
                                     montolimite = (reader["montolimite"] is DBNull) ? 0 : (decimal)reader["montolimite"],
                                     montoconsumo = (reader["montoconsumo"] is DBNull) ? 0 : (decimal)reader["montoconsumo"],
                                     vender = ((reader["vender"]) is DBNull) ? string.Empty : reader["vender"].ToString(),
                                     codpersonal = ((reader["codpersonal"]) is DBNull) ? string.Empty : reader["codpersonal"].ToString(),
                                     nombre = ((reader["nombre"]) is DBNull) ? string.Empty : reader["nombre"].ToString()
-                               };
+                                };
                                 objSetVista = objVista;
                             }
                         }
@@ -667,7 +674,7 @@ namespace Net.Data
         public async Task<ResultadoTransaccion<object>> GetCorrelativoConsulta()
         {
             // por el momento no se usa, se est usando SerieRepository GetListConfigDocumentoPorNombreMaquina
-            
+
             ResultadoTransaccion<object> vResultadoTransaccion = new ResultadoTransaccion<object>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
 
@@ -681,7 +688,7 @@ namespace Net.Data
                     using (SqlCommand cmd = new SqlCommand(SP_GET_CORRELATIVO_CONSULTA, conn))
                     {
                         cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                        
+
                         await conn.OpenAsync();
 
                         var objSetVista = new object();
@@ -778,7 +785,189 @@ namespace Net.Data
 
         }
 
-        public async Task<ResultadoTransaccion<string>> ComprobantesRegistrar(BE_Comprobante value,string tipocomprobante,string correo,string codTipoafectacionigv,bool wFlg_electronico,string maquina)
+        private Boolean MdsynPagos_UpdatexCampo(long ide_pagos_bot, string nuevo_valor, string campo, SqlConnection conn, SqlTransaction transaction)
+        {
+
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand(SP_MDSYNPAGOS_UPDATE_CAMPOS, conn, transaction))
+                {
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add(new SqlParameter("@ide_pagos_bot", ide_pagos_bot));
+                    cmd.Parameters.Add(new SqlParameter("@nuevo_valor", nuevo_valor));
+                    cmd.Parameters.Add(new SqlParameter("@campo", campo));
+
+                    var resultado = cmd.ExecuteNonQuery();
+                    if (resultado >= -1)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+        private Boolean ComprobanteElectronico_Update(string campo, string nuevovalor, string xml, byte[] codigobarrajpg, string codigo)
+        {
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_cnx))
+                {
+
+                    using (SqlCommand cmd = new SqlCommand(SP_COMPROBANTE_ELECTRONICO_UPDATE, conn))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@campo", campo));
+                        cmd.Parameters.Add(new SqlParameter("@nuevovalor", nuevovalor));
+                        cmd.Parameters.Add(new SqlParameter("@xml", xml));
+                        cmd.Parameters.Add(new SqlParameter("@codigobarrajpg", codigobarrajpg));
+                        cmd.Parameters.Add(new SqlParameter("@codigo", codigo));
+
+                        conn.Open();
+
+                        var resultado = cmd.ExecuteNonQuery();
+                        if (resultado >= -1)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+
+                    }
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+        //SP_POST_COMPROBANTE_VAL_UPDATE
+        private async Task<ResultadoTransaccion<string>> Comprobante_Val_Update_transaccion(BE_Comprobante value, string correo, string codTipoafectacionigv, string codcomprobante, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
+
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand(SP_POST_COMPROBANTE_VAL_UPDATE, conn, transaction))
+                {
+
+                    cmd.Parameters.Clear();
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    //cmd.Parameters.Add(new SqlParameter("@coduser", value.coduser));
+                    cmd.Parameters.Add(new SqlParameter("@idusuario", value.idusuario));
+                    //cmd.Parameters.Add(new SqlParameter("@codcentro", value.codcentro));// añadimos por bd  SBALogistica
+                    cmd.Parameters.Add(new SqlParameter("@cardcode", value.cardcode));
+                    cmd.Parameters.Add(new SqlParameter("@tipdocidentidad", value.tipdocidentidad));// default null
+                    cmd.Parameters.Add(new SqlParameter("@docidentidad", value.docidentidad));// default null
+                                                                                              // inicio clinica comprobante electronico
+                    cmd.Parameters.Add(new SqlParameter("@flg_gratuito", value.flg_gratuito));
+                    cmd.Parameters.Add(new SqlParameter("@correo", correo));
+                    cmd.Parameters.Add(new SqlParameter("@tipoafectacionigv", codTipoafectacionigv));
+                    // fin clinica comprobante electronico
+                    cmd.Parameters.Add(new SqlParameter("@codcomprobante", codcomprobante));
+
+                    await cmd.ExecuteNonQueryAsync();
+
+                    vResultadoTransaccion.IdRegistro = 0;
+                    vResultadoTransaccion.ResultadoCodigo = 0;
+                    vResultadoTransaccion.ResultadoDescripcion = "SE REGISTRO CORRECTAMENTE";
+                    vResultadoTransaccion.data = codcomprobante;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = "Error Comprobante al intentar actualizar sus valores" + ex.Message;
+            }
+
+            return vResultadoTransaccion;
+
+        }
+
+        private async Task<ResultadoTransaccion<string>> Comprobante_Insert_transaccion(BE_Comprobante value, string tipocomprobante, string maquina, string codcomprobante, SqlConnection conn, SqlTransaction transaction)
+        {
+            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
+
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand(SP_COMPROBANTE_INSERT, conn, transaction))
+                {
+
+                    int li_contador = 0;
+                    string variostipopago = "";
+                    foreach (var item in value.cuadreCaja)
+                    {
+                        li_contador = li_contador + 1;
+                        variostipopago = (li_contador == 1) ? "N" : "S";
+                        cmd.Parameters.Clear();
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@tipocomprobante", tipocomprobante));
+                        cmd.Parameters.Add(new SqlParameter("@codventa", value.codventa));
+                        cmd.Parameters.Add(new SqlParameter("@monto", item.monto));
+                        cmd.Parameters.Add(new SqlParameter("@moneda", value.moneda));
+                        cmd.Parameters.Add(new SqlParameter("@anombrede", value.anombrede));
+                        cmd.Parameters.Add(new SqlParameter("@ruc", value.ruc));
+                        cmd.Parameters.Add(new SqlParameter("@direccion", value.direccion));
+                        cmd.Parameters.Add(new SqlParameter("@tipopago", item.tipopago));
+                        cmd.Parameters.Add(new SqlParameter("@nombreentidad", item.nombreentidad.ToString()));
+                        cmd.Parameters.Add(new SqlParameter("@descripcionentidad", item.descripcionentidad.ToString()));
+                        cmd.Parameters.Add(new SqlParameter("@numeroentidad", item.numeroentidad.ToString()));
+                        cmd.Parameters.Add(new SqlParameter("@codterminal", item.codterminal));
+                        cmd.Parameters.Add(new SqlParameter("@operacion", "T"));
+                        cmd.Parameters.Add(new SqlParameter("@variostipopago", variostipopago));
+                        cmd.Parameters.Add(new SqlParameter("@strcodcomprobante", codcomprobante));
+                        cmd.Parameters.Add(new SqlParameter("@tipodecambio", value.tipodecambio));
+                        cmd.Parameters.Add(new SqlParameter("@maquina", maquina));
+
+                        SqlParameter oParam = new SqlParameter("@codcomprobante", SqlDbType.Char, 11)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        cmd.Parameters.Add(oParam);
+
+                        await cmd.ExecuteNonQueryAsync();
+
+                        codcomprobante = cmd.Parameters["@codcomprobante"].Value.ToString();
+                        if (codcomprobante.Equals("")) throw new Exception("Error al insertar comprobante !!");
+                        vResultadoTransaccion.IdRegistro = 0;
+                        vResultadoTransaccion.ResultadoCodigo = 0;
+                        vResultadoTransaccion.ResultadoDescripcion = "SE REGISTRO CORRECTAMENTE";
+                        vResultadoTransaccion.data = codcomprobante;
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = 0;
+                vResultadoTransaccion.ResultadoDescripcion = "Error Comprobante_Insert: " + ex.Message;
+            }
+
+            return vResultadoTransaccion;
+
+        }
+
+
+        public async Task<ResultadoTransaccion<string>> ComprobantesRegistrar(BE_Comprobante value, string tipocomprobante, string correo, string codTipoafectacionigv, bool wFlg_electronico, string maquina, long idePagosBot, bool flgPagoUsado, int flg_otorgar, string tipoCodigoBarrahash, string wStrURL)
         {
             ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -796,423 +985,265 @@ namespace Net.Data
 
                     try
                     {
-                        //REQ_ValeSalidaIns
-                        using (SqlCommand cmd = new SqlCommand(SP_COMPROBANTE_INSERT, conn, transaction))
-                        {
-                            
-                            int li_contador = 0;
-                            string variostipopago = "";
-                            foreach (var item in value.cuadreCaja)
-                            {
-                                li_contador = li_contador + 1;
-                                variostipopago = (li_contador == 1) ? "N" : "S";
-                                cmd.Parameters.Clear();
-                                cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                cmd.Parameters.Add(new SqlParameter("@tipocomprobante", tipocomprobante));
-                                cmd.Parameters.Add(new SqlParameter("@codventa", value.codventa));
-                                cmd.Parameters.Add(new SqlParameter("@monto", item.monto));
-                                cmd.Parameters.Add(new SqlParameter("@moneda", value.moneda));
-                                cmd.Parameters.Add(new SqlParameter("@anombrede", value.anombrede));
-                                cmd.Parameters.Add(new SqlParameter("@ruc", value.ruc));
-                                cmd.Parameters.Add(new SqlParameter("@direccion", value.direccion));
-                                cmd.Parameters.Add(new SqlParameter("@tipopago", item.tipopago));
-                                cmd.Parameters.Add(new SqlParameter("@nombreentidad", item.nombreentidad.ToString()));
-                                cmd.Parameters.Add(new SqlParameter("@descripcionentidad", item.descripcionentidad.ToString()));
-                                cmd.Parameters.Add(new SqlParameter("@numeroentidad", item.numeroentidad.ToString()));
-                                cmd.Parameters.Add(new SqlParameter("@codterminal", item.codterminal));
-                                cmd.Parameters.Add(new SqlParameter("@operacion", "T"));
-                                cmd.Parameters.Add(new SqlParameter("@variostipopago", variostipopago));
-                                cmd.Parameters.Add(new SqlParameter("@strcodcomprobante", codcomprobante));
-                                cmd.Parameters.Add(new SqlParameter("@tipodecambio", value.tipodecambio));
-                                cmd.Parameters.Add(new SqlParameter("@maquina", maquina));
-                                
-                                SqlParameter oParam = new SqlParameter("@codcomprobante", SqlDbType.Char, 11)
-                                {
-                                    Direction = ParameterDirection.Output
-                                };
-                                cmd.Parameters.Add(oParam);
 
-                                await cmd.ExecuteNonQueryAsync();
-
-                                codcomprobante  = cmd.Parameters["@codcomprobante"].Value.ToString();
-                                if(codcomprobante.Equals("")) throw new Exception("Error al insertar comprobante !!");
-                                vResultadoTransaccion.IdRegistro = 0;
-                                vResultadoTransaccion.ResultadoCodigo = 0;
-                                vResultadoTransaccion.ResultadoDescripcion = "SE REGISTRO CORRECTAMENTE";
-                                vResultadoTransaccion.data = codcomprobante;
-                            }
+                        var InsertTransac = await Comprobante_Insert_transaccion(value, tipocomprobante, maquina, codcomprobante, conn, transaction);
+                        if (InsertTransac.IdRegistro != 0) {
+                            transaction.Rollback();
+                            return InsertTransac;
                         }
 
-                        if (codcomprobante != string.Empty) {
+                        codcomprobante = InsertTransac.data;
+
+                        if (codcomprobante != string.Empty)
+                        {
                             value.codcomprobante = codcomprobante;
-                                //Actualizando valores
-
-                                using (SqlCommand cmd = new SqlCommand(SP_POST_COMPROBANTE_VAL_UPDATE, conn, transaction))
-                                {
-                                  
-                                    cmd.Parameters.Clear();
-                                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                    //cmd.Parameters.Add(new SqlParameter("@coduser", value.coduser));
-                                    cmd.Parameters.Add(new SqlParameter("@idusuario", value.idusuario));
-                                    //cmd.Parameters.Add(new SqlParameter("@codcentro", value.codcentro));// añadimos por bd  SBALogistica
-                                    cmd.Parameters.Add(new SqlParameter("@cardcode", value.cardcode)); 
-                                    cmd.Parameters.Add(new SqlParameter("@tipdocidentidad", value.tipdocidentidad));// default null
-                                    cmd.Parameters.Add(new SqlParameter("@docidentidad", value.docidentidad));// default null
-                                    // inicio clinica comprobante electronico
-                                    cmd.Parameters.Add(new SqlParameter("@flg_gratuito", value.flg_gratuito));
-                                    cmd.Parameters.Add(new SqlParameter("@correo", correo));
-                                    cmd.Parameters.Add(new SqlParameter("@tipoafectacionigv", codTipoafectacionigv));
-                                    // fin clinica comprobante electronico
-                                    cmd.Parameters.Add(new SqlParameter("@codcomprobante", codcomprobante));
-
-                                    await cmd.ExecuteNonQueryAsync();
-
-                                    vResultadoTransaccion.IdRegistro = 0;
-                                    vResultadoTransaccion.ResultadoCodigo = 0;
-                                    vResultadoTransaccion.ResultadoDescripcion = "SE REGISTRO CORRECTAMENTE";
-                                    vResultadoTransaccion.data = codcomprobante;
-                             
-                                }
-                        }
-
-                        //I-TCI
-                        #region <<< TCI >>>
-
-                        if (wFlg_electronico = true && codcomprobante != null)
-                        {
-                            ComprobanteElectronicoRepository comprobanteElectronicoRepository = new ComprobanteElectronicoRepository(context, _configuration);
-                            vResultadoTransaccion = await comprobanteElectronicoRepository.EnviarComprobanteElectronica(codcomprobante, "0");
-
-                            if (vResultadoTransaccion.ResultadoCodigo == 0)
-                            {
-                                vResultadoTransaccion.IdRegistro = 0;
-                                vResultadoTransaccion.ResultadoCodigo = 0;
-                                vResultadoTransaccion.ResultadoDescripcion = "COMPROBANTE ENVIADO A TCI CORRECTAMENTE.";
-                            }
-                            else
+                            var ActulizaValResultado = await Comprobante_Val_Update_transaccion(value, correo, codTipoafectacionigv, codcomprobante, conn, transaction);
+                            if (ActulizaValResultado.IdRegistro != 0)
                             {
                                 transaction.Rollback();
-                                vResultadoTransaccion.IdRegistro = -1;
-                                vResultadoTransaccion.ResultadoCodigo = -1;
-                                vResultadoTransaccion.ResultadoDescripcion = "ERROR AL ENVIAR EL COMPROBANTE A TCI.";
-                                return vResultadoTransaccion;
-                            }
-                        }
-                        else {
-                            //wFlg_electronico
-                            if (true) { 
-                            
-
-                            
+                                return ActulizaValResultado;
                             }
 
                         }
 
-                        #endregion <<< TCI >>>
-                        //F-TCI
 
-                        //F-SAP
-                        #region <<< SAP >>>
 
-                        if (codcomprobante != null)
-                        {
-                            string cadena = string.Empty;
-                            SapBaseResponse<SapDocument> data = new SapBaseResponse<SapDocument>();
+#if !DEBUG
+                            
+                        #region <<< TCI >>>
 
-                            #region <<< Factura >>>
-
-                            List<SapBatchNumbers> sapBatchNumbers = new List<SapBatchNumbers>();
-                            List<SapBinAllocations> sapBinAllocations = new List<SapBinAllocations>();
-
-                            var response = new BE_VentasCabecera();
-
-                            using (SqlCommand cmd = new SqlCommand(SP_GET_CABECERA_VENTA_POR_CODVENTA, conn, transaction))
+                            if (wFlg_electronico = true && codcomprobante != null)
                             {
-                                cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                cmd.Parameters.Add(new SqlParameter("@codventa", value.codventa));
 
-                                using (var reader = await cmd.ExecuteReaderAsync())
-                                {
-                                    response = context.Convert<BE_VentasCabecera>(reader);
-                                }
-                            }
+                        #region recuperando tipoCodigoBarraHash
+                                //string tipoCodigoBarraHash = string.Empty;
 
-                            var document = new SapDocument
-                            {
-                                DocType = "dDocument_Items",
-                                DocDate = response.fechaemision,
-                                DocDueDate = response.fechaemision,
-                                CardCode = "PAC501946",
-                                DocCurrency = "S/",
-                                TaxDate = response.fechaemision,
-                                Comments = "", //response.observacion,
-                                DocObjectCode = "oInvoices",
-                                DocumentLines = new List<SapDocumentLines>()
-                            };
+                                //var resultadoTransaTabla2 = new ResultadoTransaccion<BE_Tabla>();
+                                //resultadoTransaTabla2 = await tablaRepository.GetTablaLogisticaPorFiltros("EFACT_TIPOCODIGO_BARRAHASH", "01", 50, 1, -1);
 
-                            var responseDetalle = new List<BE_VentasDetalle>();
+                                //if (resultadoTransaTabla2.IdRegistro != 0) throw new ArgumentException("se genero un error en EFACT_TIPOCODIGO_BARRAHASH");
 
-                            using (SqlCommand cmd = new SqlCommand(SP_GET_DETALLEVENTA_POR_CODVENTA, conn, transaction))
-                            {
-                                cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                cmd.Parameters.Add(new SqlParameter("@codventa", value.codventa));
+                                //tipoCodigoBarraHash = resultadoTransaTabla2.data.valor.ToString();
 
-                                using (var reader = await cmd.ExecuteReaderAsync())
-                                {
-                                    responseDetalle = (List<BE_VentasDetalle>)context.ConvertTo<BE_VentasDetalle>(reader);
-                                }
-                            }
+                                //if (tipoCodigoBarraHash == "" && wFlg_electronico == true)
+                                //{
+                                //    vResultadoTransaccion.IdRegistro = -1;
+                                //    vResultadoTransaccion.ResultadoCodigo = -1;
+                                //    vResultadoTransaccion.ResultadoDescripcion = "Solicite asignar se se imprimirá Codigo de Barras o Codigo Hash";
+                                //    throw new ArgumentException("Solicite asignar se se imprimirá Codigo de Barras o Codigo Hash");
+                                //}
 
-                            var responseDetalleLote = new List<BE_VentasDetalleLote>();
+                                //if (tipoCodigoBarraHash == "" || tipoCodigoBarraHash != "0" || tipoCodigoBarraHash != "1")
+                                //{
+                                //    vResultadoTransaccion.IdRegistro = -1;
+                                //    vResultadoTransaccion.ResultadoCodigo = -1;
+                                //    vResultadoTransaccion.ResultadoDescripcion = "Solicite asignar se se imprimirá Codigo de Barras o Codigo Hash.";
+                                //    throw new ArgumentException("Solicite asignar se se imprimirá Codigo de Barras o Codigo Hash.");
+                                //}
 
-                            using (SqlCommand cmd = new SqlCommand(SP_GET_DETALLEVENTA_LOTE_POR_CODVENTA, conn, transaction))
-                            {
-                                foreach (BE_VentasDetalle item in responseDetalle)
-                                {
-                                    if (item.manBtchNum || item.binactivat)
-                                    {
-                                        cmd.Parameters.Clear();
-                                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                        cmd.Parameters.Add(new SqlParameter("@coddetalle", item.coddetalle));
+                                //tipoCodigo =tipoCodigoBarraHash
+                        #endregion
 
-                                        using (var reader = await cmd.ExecuteReaderAsync())
-                                        {
-                                            responseDetalleLote = (List<BE_VentasDetalleLote>)context.ConvertTo<BE_VentasDetalleLote>(reader);
-                                        }
 
-                                        responseDetalle.Find(xFila => xFila.coddetalle == item.coddetalle).listVentasDetalleLotes = responseDetalleLote;
-                                    }
-                                }
-                            }
+                                string TipoComp_TCI = string.Empty;
+                                TablaRepository tablaRepository = new TablaRepository(context, _configuration);
+                                var resultadoTransaTabla = new ResultadoTransaccion<BE_Tabla>();
 
-                            foreach (BE_VentasDetalle item in responseDetalle)
-                            {
-                                var linea = new SapDocumentLines
-                                {
-                                    ItemCode = item.codproducto,
-                                    ItemDescription = item.nombreproducto,
-                                    Quantity = item.cantidad,
-                                    UnitPrice = item.preciounidad,
-                                    TaxCode = "IGV",
-                                    AccountCode = "20111001",
-                                    WarehouseCode = response.codalmacen,
-                                    CostingCode = "CAMA",
-                                    CostingCode2 = "AMBU",
-                                    CostingCode3 = "FARM",
-                                    CostingCode4 = "GESO",
-                                    BatchNumbers = new List<SapBatchNumbers>(),
-                                    DocumentLinesBinAllocations = new List<SapBinAllocations>()
-                                };
+                                //Factura,Boleta
+                                resultadoTransaTabla = await tablaRepository.GetTablaLogisticaPorFiltros("EFACT_TIPOCOMP_FORCALL_WS_TCI", codcomprobante.Substring(0, 1), 50, 1, -1);
+                                if (resultadoTransaTabla.IdRegistro == 0) TipoComp_TCI = resultadoTransaTabla.data.nombre;
 
-                                if (item.listVentasDetalleLotes != null)
-                                {
-                                    if (item.listVentasDetalleLotes.Count > 0)
-                                    {
-                                        foreach (BE_VentasDetalleLote itemLote in item.listVentasDetalleLotes)
-                                        {
-                                            var lineaLote = new SapBatchNumbers
-                                            {
-                                                Quantity = itemLote.cantidad,
-                                                BatchNumber = itemLote.lote
-                                            };
 
-                                            sapBatchNumbers.Add(lineaLote);
+                                /*Electronico Enviar o no a SUNAT*/
+                                string wFlagEnviaASunat = string.Empty;
+                                var objEnvioSunat = await tablaRepository.GetTablasClinicaPorFiltros("EFACT_FLAG_ENVIAASUNAT", "", 0, 0, 5);
+                                wFlagEnviaASunat = objEnvioSunat.data.codigo.Trim();
 
-                                            if (itemLote.ubicacion != null || itemLote.ubicacion != 0)
-                                            {
-                                                var lineaUbicacion = new SapBinAllocations
-                                                {
-                                                    BinAbsEntry = int.Parse(itemLote.ubicacion.ToString()),
-                                                    Quantity = itemLote.cantidad,
-                                                    SerialAndBatchNumbersBaseLine = 0
-                                                };
-                                                sapBinAllocations.Add(lineaUbicacion);
-                                            }
-                                        }
 
-                                        linea.BatchNumbers = sapBatchNumbers;
-                                        linea.DocumentLinesBinAllocations = sapBinAllocations;
-                                    }
-                                }
-
-                                document.DocumentLines.Add(linea);
-                            }
-
-                            try
-                            {
-                                cadena = "Invoices";
-                                data = await _connectServiceLayer.PostAsyncSBA<SapBaseResponse<SapDocument>>(cadena, document);
-
-                                if (data.DocEntry != 0)
-                                {
-                                    vResultadoTransaccion.IdRegistro = 0;
-                                    vResultadoTransaccion.ResultadoCodigo = 0;
-                                    vResultadoTransaccion.ResultadoDescripcion = "COMPROBANTE ENVIADO A SAP CORRECTAMENTE.";
-                                }
-                                else
+                                string Xml = string.Empty;
+                                var pRetorno = Metodo_Registrar_FB(codcomprobante, tipoCodigoBarrahash, flg_otorgar.ToString(), ref Xml);
+                                if (pRetorno != 0)
                                 {
                                     transaction.Rollback();
-                                    vResultadoTransaccion.IdRegistro = -1;
-                                    vResultadoTransaccion.ResultadoCodigo = -1;
-                                    vResultadoTransaccion.ResultadoDescripcion = "ERROR AL ENVIAR EL COMPROBANTE A SAP.";
+                                    if (pRetorno == -1)
+                                    {
+                                        vResultadoTransaccion.IdRegistro = -1;
+                                        vResultadoTransaccion.ResultadoCodigo = -1;
+                                        vResultadoTransaccion.ResultadoDescripcion = "Comprobante no generado: Error al construir XML. Detalle tiene monto negativo";
+                                    }
+                                    else
+                                    {
+                                        vResultadoTransaccion.IdRegistro = -1;
+                                        vResultadoTransaccion.ResultadoCodigo = -1;
+                                        vResultadoTransaccion.ResultadoDescripcion = "Comprobante no generado: Error al construir XML";
+                                    }
+
                                     return vResultadoTransaccion;
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                vResultadoTransaccion.IdRegistro = -1;
-                                vResultadoTransaccion.ResultadoCodigo = -1;
-                                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
-                            }
 
-                            #endregion
+                                //wStrURL = "http://200.106.52.10/WS_TCI/Service.asmx?wsdl";
+                                string wStrURL1 = wStrURL;
 
-                            #region <<< Pago >>>
+                                string strSOAPAction = "http://tempuri.org/Registrar";
 
-                            if (vResultadoTransaccion.IdRegistro == 0)
-                            {
-                                foreach (var item in value.cuadreCaja)
+                                var parser = new DOMDocument30();
+                                parser.loadXML(Xml);
+
+                                if (!parser.loadXML(Xml))
                                 {
-                                    DateTime? transferDate = null;
+                                    vResultadoTransaccion.IdRegistro = -1;
+                                    vResultadoTransaccion.ResultadoCodigo = -1;
+                                    vResultadoTransaccion.ResultadoDescripcion = "Error al construir XML. Comuniquese con el area de sistemas";
+                                }
 
-                                    if (item.tipopago == "A") transferDate = DateTime.Now;
+                                //Indicar el parámetro a enviar - AG: Lo que hacemos es asignar el parámetro que queremos pasarle a la función Registrar
 
-                                    var IncomingPayments = new SapIncomingPayments()
+                                parser.selectSingleNode("/soap:Envelope/soap:Body/Registrar/oTipoComprobante").text = TipoComp_TCI;   //'TCI-Regla: enviar "Factura","Boleta","NotaCredito","NotaDebito"
+                                parser.selectSingleNode("/soap:Envelope/soap:Body/Registrar/TipoCodigo").text = tipoCodigoBarrahash;  //'TCI "1"
+                                parser.selectSingleNode("/soap:Envelope/soap:Body/Registrar/Otorgar").text = flg_otorgar.ToString();            //'TCI "1"
+                                parser.selectSingleNode("/soap:Envelope/soap:Body/Registrar/IdComprobanteCliente").text = "0";        //'TCI-Regla: enviar CodComprobante en int; 08/06/2015:No se enviara porq TCI no soporta(INTEGER) series mayores a 214; Mid(wCodComprobante, 2, 10)
+
+                                string strXml;
+                                strXml = parser.xml;
+
+                                // 'I-Call PostWebservice y Leer rpta de TCI - usando code de csf
+                                DOMDocument30 xmlResponse = new DOMDocument30();
+                                string wResponseXML = string.Empty;
+                                string wResponseTXT = string.Empty;
+                                string wCodigoHash = string.Empty;
+                                string wCodigoBarra = string.Empty;
+                                string wCadenaRpta = string.Empty;
+
+                                if (wFlagEnviaASunat == "S")
+                                {
+                                    //var rsultadoTransa1 = await comprobanteElectronicoRepository.EnviarComprobanteElectronica(codcomprobante, "0");
+                                    //var rsultadoTransa1 = await comprobanteElectronicoRepository.VentaCaja_InvokeWebService_TCI(codcomprobante, strXml, flg_otorgar.ToString());
+
+                                    ComprobanteElectronicaTCIXml comprobanteElectronicaTCIXml = new ComprobanteElectronicaTCIXml();
+
+                                    if (comprobanteElectronicaTCIXml.InvokeWebServiceTCI(strXml.Trim(), strSOAPAction, wStrURL, xmlResponse))
                                     {
-                                        DocType = "rCustomer",
-                                        DocDate = DateTime.Now,
-                                        CardCode = "PAC501946",
-                                        DocCurrency = "S/",
-                                        CashSum = (item.tipopago == "E") ? decimal.Parse("109.65") : 0,
-                                        CheckAccount = (item.tipopago == "C") ? "10411004" : "",
-                                        TransferAccount = (item.tipopago == "A") ? "10411002" : "",
-                                        TransferSum = (item.tipopago == "A") ? decimal.Parse("109.65") : 0,
-                                        TransferDate = transferDate,
-                                        TransferReference = (item.tipopago == "A") ? item.numeroentidad : "",
-                                        CounterReference = "",
-                                        TaxDate = DateTime.Now,
-                                        DocObjectCode = "bopot_IncomingPayments",
-                                        DueDate = DateTime.Now,
-                                        PaymentChecks = new List<SapPaymentChecks>(),
-                                        PaymentInvoices = new List<SapPaymentInvoices>(),
-                                        PaymentCreditCards = new List<SapPaymentCreditCards>()
-                                    };
 
+                                        wResponseXML = xmlResponse.xml;
+                                        wResponseTXT = xmlResponse.text;
 
-                                    //I-Cheque
-                                    if (item.tipopago == "C")
-                                    {
-                                        object bankCode;
+                                        // 'I-Leer parametro de salida Retorno(true/false) para saber si se registró en SUNAT - (Ref: AgregarPacientesCSFaTisal)
+                                        DOMDocument xml_document = new DOMDocument();
+                                        xml_document.loadXML(wResponseXML);
 
-                                        using (SqlCommand cmd = new SqlCommand(SP_GET_TABLAS_CODIGO_BANCO, conn, transaction))
+                                        string ResultStatus = "/soap:Envelope/soap:Body/RegistrarResponse/";
+                                        string wStatus = xml_document.selectSingleNode(ResultStatus + "RegistrarResult").text;
+
+                                        if (wStatus == "true")
                                         {
-                                            cmd.Parameters.Clear();
-                                            cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                            cmd.Parameters.Add(new SqlParameter("@codigo", item.nombreentidad));
 
-                                            bankCode = await cmd.ExecuteScalarAsync();
-                                        }
-
-                                        var paymentChecks = new SapPaymentChecks()
-                                        {
-                                            DueDate = DateTime.Now,
-                                            CheckNumber = int.Parse(item.numeroentidad),
-                                            BankCode = bankCode.ToString(),
-                                            CheckSum = decimal.Parse("109.65"),
-                                            Currency = "S/",
-                                            CountryCode = "PE"
-                                        };
-                                        IncomingPayments.PaymentChecks.Add(paymentChecks);
-                                    }
-                                    //F-Cheque
-
-                                    //I-Factura
-                                    var paymentInvoices = new SapPaymentInvoices()
-                                    {
-                                        DocEntry = data.DocEntry,
-                                        SumApplied = decimal.Parse("109.65"),
-                                        InvoiceType = "it_Invoice"
-                                    };
-                                    IncomingPayments.PaymentInvoices.Add(paymentInvoices);
-                                    //F-Factura
-
-                                    //I-Tarjeta crédito
-                                    if (item.tipopago == "T")
-                                    {
-                                        int creditCard = 0;
-                                        int paymentMethodCode = 0;
-
-                                        using (SqlCommand cmd = new SqlCommand(SP_GET_TABLAS_CODIGO_TIPO_TARJETA, conn, transaction))
-                                        {
-                                            cmd.Parameters.Clear();
-                                            cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                                            cmd.Parameters.Add(new SqlParameter("@codigo", item.nombreentidad));
-
-                                            using (var reader = await cmd.ExecuteReaderAsync())
+                                            if (flgPagoUsado == true)
                                             {
-                                                while (await reader.ReadAsync())
-                                                {
-                                                    creditCard = int.Parse(reader["valor2"].ToString());
-                                                    paymentMethodCode = int.Parse(reader["valor"].ToString());
-                                                }
+                                                var result1 = MdsynPagos_UpdatexCampo(idePagosBot, value.idusuario.ToString(), "flg_pago_usado", conn, transaction);
+                                                var result2 = MdsynPagos_UpdatexCampo(idePagosBot, codcomprobante, "cod_comprobante", conn, transaction);
+                                                flgPagoUsado = false;
                                             }
-                                        }
 
-                                        var paymentCreditCards = new SapPaymentCreditCards()
-                                        {
-                                            CreditCard = creditCard,
-                                            CreditCardNumber = item.numeroentidad,
-                                            CardValidUntil = DateTime.Now,
-                                            VoucherNum = "000",
-                                            PaymentMethodCode = paymentMethodCode,
-                                            NumOfPayments = 1,
-                                            FirstPaymentDue = DateTime.Now,
-                                            FirstPaymentSum = decimal.Parse("109.65"),
-                                            CreditSum = decimal.Parse("109.65"),
-                                            CreditCur = "S/",
-                                            NumOfCreditPayments = 1
-                                        };
-                                        IncomingPayments.PaymentCreditCards.Add(paymentCreditCards);
-                                    }
-                                    //F-Tarjeta crédito
+                                            transaction.Commit();
 
-                                    try
-                                    {
-                                        cadena = "IncomingPayments";
-                                        data = await _connectServiceLayer.PostAsyncSBA<SapBaseResponse<SapDocument>>(cadena, IncomingPayments);
+                                            ComprobanteElectronicoRepository CPERepository = new ComprobanteElectronicoRepository(context, _configuration);
+                                            ResultadoTransaccion<string> vResultado1 = new ResultadoTransaccion<string>();
 
-                                        if (data.DocEntry != 0)
-                                        {
-                                            vResultadoTransaccion.IdRegistro = 0;
-                                            vResultadoTransaccion.ResultadoCodigo = 0;
-                                            vResultadoTransaccion.ResultadoDescripcion = "PAGO ENVIADO A SAP CORRECTAMENTE.";
+                                            vResultado1 = await CPERepository.ModificarComprobanteElectronico("fecha_registro_rpta", "", "", codcomprobante);
+                                            vResultado1 = await CPERepository.ModificarComprobanteElectronico("tipo_otorgamiento", flg_otorgar.ToString(), "", codcomprobante);
+                                            vResultado1 = await CPERepository.ModificarComprobanteElectronico("xml_registro", "", strXml.Trim(), codcomprobante);
+
+                                            wStatus = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<RegistrarResult>", "</RegistrarResult>");
+                                            wCadenaRpta = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<Cadena>", "</Cadena>");
+                                            vResultadoTransaccion = await CPERepository.ModificarComprobanteElectronico("observacion_registro", wStatus + "; " + wCadenaRpta.Substring(0, 3980), "", codcomprobante);
+                                            wCodigoBarra = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<CodigoBarras>", "</CodigoBarras>");
+                                            vResultado1 = await CPERepository.ModificarComprobanteElectronico("codigohash", wCodigoHash, "", codcomprobante);
+
+                                            //zEfact.ConvertirCodigoBarraJPG txtCodComprobante.Text, wCodigoBarra, zFarmacia2
+                                            // 'Convertimos el texto en un Array de byte()
+                                            byte[] xObtenerByte = Convert.FromBase64String(wCodigoBarra);
+                                            var resultCodBarra = ComprobanteElectronico_Update("codigobarra", "", "", xObtenerByte, codcomprobante);
+
+
                                         }
                                         else
                                         {
                                             transaction.Rollback();
+                                            wCadenaRpta = comprobanteElectronicaTCIXml.Leer_ResponseXML(wResponseXML, "<Cadena>", "</Cadena>");
+                                            //EnviarCorreo_Error wCodcomprobante, wCadenaRpta
                                             vResultadoTransaccion.IdRegistro = -1;
                                             vResultadoTransaccion.ResultadoCodigo = -1;
-                                            vResultadoTransaccion.ResultadoDescripcion = "ERROR AL ENVIAR EL PAGO A SAP.";
+                                            vResultadoTransaccion.ResultadoDescripcion = "Cadena: " + wCadenaRpta + "<br> Metodo_Registrar: " + codcomprobante;
                                             return vResultadoTransaccion;
                                         }
                                     }
-                                    catch (Exception ex)
+                                    else
                                     {
+                                        // SISQUE OCURRE UN ERROR AL ENVIAR A CTI
                                         transaction.Rollback();
                                         vResultadoTransaccion.IdRegistro = -1;
                                         vResultadoTransaccion.ResultadoCodigo = -1;
-                                        vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
+                                        vResultadoTransaccion.ResultadoDescripcion = "Metodo_Registrar: "+ codcomprobante + "  Error al invocar WebService : InvokeWebService_CSF";
+                                        //EnviarCorreo_Error wCodcomprobante, "Error al invocar WebService (Metodo_Registrar)"
+                                        return vResultadoTransaccion;
+
                                     }
+
+                                }
+                                else
+                                {
+                                    //'Electrónico pero no se envia a su SUNAT, no invocar al Web Services
+                                    //wStatus = True
+
+                                    if (flgPagoUsado == true)
+                                    {
+                                        var result1 = MdsynPagos_UpdatexCampo(idePagosBot, value.idusuario.ToString(), "flg_pago_usado", conn, transaction);
+                                        var result2 = MdsynPagos_UpdatexCampo(idePagosBot, codcomprobante, "cod_comprobante", conn, transaction);
+                                        flgPagoUsado = false;
+                                    }
+
+                                    transaction.Commit();
+
+                                    ComprobanteElectronicoRepository CPERepository = new ComprobanteElectronicoRepository(context, _configuration);
+                                    ResultadoTransaccion<string> vResultado1 = new ResultadoTransaccion<string>();
+                                    vResultado1 = await CPERepository.ModificarComprobanteElectronico("fecha_registro_rpta", "", "", codcomprobante);
+                                    vResultado1 = await CPERepository.ModificarComprobanteElectronico("tipo_otorgamiento", flg_otorgar.ToString(), "", codcomprobante);
+                                    vResultado1 = await CPERepository.ModificarComprobanteElectronico("xml_registro", "", strXml.Trim(), codcomprobante);
+                                    vResultado1 = await CPERepository.ModificarComprobanteElectronico("codigohash", wCodigoHash, "", codcomprobante);
+
+                               
                                 }
                             }
-                            #endregion
+                            else
+                            {
+                                if (flgPagoUsado == true)
+                                {
+                                    var result1 = MdsynPagos_UpdatexCampo(idePagosBot, value.idusuario.ToString(), "flg_pago_usado", conn, transaction);
+                                    var result2 = MdsynPagos_UpdatexCampo(idePagosBot, codcomprobante, "cod_comprobante", conn, transaction);
+                                    flgPagoUsado = false;
+                                }
+
+                                transaction.Commit();
+
+                            }
+
+                        #endregion <<< TCI >>>
+                           
+#endif
+
+                        var resultSap = await EnvioSapFactura_Pagos(value, conn, transaction);
+                        if (resultSap.IdRegistro == 0)
+                        {
+                            transaction.Commit();
+                            transaction.Dispose();
+                        }
+                        else
+                        {
+                            transaction.Rollback();
                         }
 
-                        #endregion <<< SAP >>>
-                        //F-SAP
-
-                        transaction.Commit();
-                        transaction.Dispose();
+                        //transaction.Commit();
+                        //transaction.Dispose();
 
                     }
                     catch (Exception ex)
@@ -1244,8 +1275,397 @@ namespace Net.Data
 
         }
 
+        public async Task<ResultadoTransaccion<string>> EnvioSapFactura_Pagos(BE_Comprobante value, SqlConnection conn, SqlTransaction transaction)
+        {
+
+            var vResultadoSapFactura = await EnvioSapFactura(value.codventa, conn, transaction);
+            if (vResultadoSapFactura.IdRegistro == 0)
+            {
+                vResultadoSapFactura = await EnvioSapPagos(value, conn, transaction);
+            }
+
+            return vResultadoSapFactura;
+
+        }
+
+        public async Task<ResultadoTransaccion<string>> EnvioSapPagos(BE_Comprobante value, SqlConnection conn, SqlTransaction transaction)
+        {
+
+            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
+
+            string cadena = string.Empty;
+            SapBaseResponse<SapDocument> data = new SapBaseResponse<SapDocument>();
+
+            try
+            {
+                foreach (var item in value.cuadreCaja)
+                {
+                    DateTime? transferDate = null;
+
+                    if (item.tipopago == "A") transferDate = DateTime.Now;
+
+                    var IncomingPayments = new SapIncomingPayments()
+                    {
+                        DocType = "rCustomer",
+                        DocDate = DateTime.Now,
+                        CardCode = "PAC501946",
+                        DocCurrency = "S/",
+                        CashSum = (item.tipopago == "E") ? decimal.Parse("109.65") : 0,
+                        CheckAccount = (item.tipopago == "C") ? "10411004" : "",
+                        TransferAccount = (item.tipopago == "A") ? "10411002" : "",
+                        TransferSum = (item.tipopago == "A") ? decimal.Parse("109.65") : 0,
+                        TransferDate = transferDate,
+                        TransferReference = (item.tipopago == "A") ? item.numeroentidad : "",
+                        CounterReference = "",
+                        TaxDate = DateTime.Now,
+                        DocObjectCode = "bopot_IncomingPayments",
+                        DueDate = DateTime.Now,
+                        PaymentChecks = new List<SapPaymentChecks>(),
+                        PaymentInvoices = new List<SapPaymentInvoices>(),
+                        PaymentCreditCards = new List<SapPaymentCreditCards>()
+                    };
+
+
+                    //I-Cheque
+                    if (item.tipopago == "C")
+                    {
+                        object bankCode;
+
+                        using (SqlCommand cmd = new SqlCommand(SP_GET_TABLAS_CODIGO_BANCO, conn, transaction))
+                        {
+                            cmd.Parameters.Clear();
+                            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                            cmd.Parameters.Add(new SqlParameter("@codigo", item.nombreentidad));
+
+                            bankCode = await cmd.ExecuteScalarAsync();
+                        }
+
+                        var paymentChecks = new SapPaymentChecks()
+                        {
+                            DueDate = DateTime.Now,
+                            CheckNumber = int.Parse(item.numeroentidad),
+                            BankCode = bankCode.ToString(),
+                            CheckSum = decimal.Parse("109.65"),
+                            Currency = "S/",
+                            CountryCode = "PE"
+                        };
+                        IncomingPayments.PaymentChecks.Add(paymentChecks);
+                    }
+                    //F-Cheque
+
+                    //I-Factura
+                    var paymentInvoices = new SapPaymentInvoices()
+                    {
+                        DocEntry = data.DocEntry,
+                        SumApplied = decimal.Parse("109.65"),
+                        InvoiceType = "it_Invoice"
+                    };
+                    IncomingPayments.PaymentInvoices.Add(paymentInvoices);
+                    //F-Factura
+
+                    //I-Tarjeta crédito
+                    if (item.tipopago == "T")
+                    {
+                        int creditCard = 0;
+                        int paymentMethodCode = 0;
+
+                        using (SqlCommand cmd = new SqlCommand(SP_GET_TABLAS_CODIGO_TIPO_TARJETA, conn, transaction))
+                        {
+                            cmd.Parameters.Clear();
+                            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                            cmd.Parameters.Add(new SqlParameter("@codigo", item.nombreentidad));
+
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    creditCard = int.Parse(reader["valor2"].ToString());
+                                    paymentMethodCode = int.Parse(reader["valor"].ToString());
+                                }
+                            }
+                        }
+
+                        var paymentCreditCards = new SapPaymentCreditCards()
+                        {
+                            CreditCard = creditCard,
+                            CreditCardNumber = item.numeroentidad,
+                            CardValidUntil = DateTime.Now,
+                            VoucherNum = "000",
+                            PaymentMethodCode = paymentMethodCode,
+                            NumOfPayments = 1,
+                            FirstPaymentDue = DateTime.Now,
+                            FirstPaymentSum = decimal.Parse("109.65"),
+                            CreditSum = decimal.Parse("109.65"),
+                            CreditCur = "S/",
+                            NumOfCreditPayments = 1
+                        };
+                        IncomingPayments.PaymentCreditCards.Add(paymentCreditCards);
+                    }
+                    //F-Tarjeta crédito
+
+                    try
+                    {
+                        cadena = "IncomingPayments";
+                        data = await _connectServiceLayer.PostAsyncSBA<SapBaseResponse<SapDocument>>(cadena, IncomingPayments);
+
+                        if (data.DocEntry != 0)
+                        {
+                            vResultadoTransaccion.IdRegistro = 0;
+                            vResultadoTransaccion.ResultadoCodigo = 0;
+                            vResultadoTransaccion.ResultadoDescripcion = "PAGO ENVIADO A SAP CORRECTAMENTE.";
+                        }
+                        else
+                        {
+                            //transaction.Rollback();
+                            vResultadoTransaccion.IdRegistro = -1;
+                            vResultadoTransaccion.ResultadoCodigo = -1;
+                            vResultadoTransaccion.ResultadoDescripcion = "ERROR AL ENVIAR EL PAGO A SAP.";
+                            return vResultadoTransaccion;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        //transaction.Rollback();
+                        vResultadoTransaccion.IdRegistro = -1;
+                        vResultadoTransaccion.ResultadoCodigo = -1;
+                        vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                //transaction.Rollback();
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
+            }
+
+            return vResultadoTransaccion;
+
+        }
+        public async Task<ResultadoTransaccion<string>> EnvioSapFactura(string codventa, SqlConnection conn, SqlTransaction transaction)
+        {
+
+            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
+
+            string cadena = string.Empty;
+            SapBaseResponse<SapDocument> data = new SapBaseResponse<SapDocument>();
+
+            #region <<< Factura >>>
+
+            List<SapBatchNumbers> sapBatchNumbers = new List<SapBatchNumbers>();
+            List<SapBinAllocations> sapBinAllocations = new List<SapBinAllocations>();
+
+            var response = new BE_VentasCabecera();
+
+            using (SqlCommand cmd = new SqlCommand(SP_GET_CABECERA_VENTA_POR_CODVENTA, conn, transaction))
+            {
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.Parameters.Add(new SqlParameter("@codventa", codventa));
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    response = context.Convert<BE_VentasCabecera>(reader);
+                }
+            }
+
+            var document = new SapDocument
+            {
+                DocType = "dDocument_Items",
+                DocDate = response.fechaemision,
+                DocDueDate = response.fechaemision,
+                CardCode = "PAC501946",
+                DocCurrency = "S/",
+                TaxDate = response.fechaemision,
+                Comments = "", //response.observacion,
+                DocObjectCode = "oInvoices",
+                DocumentLines = new List<SapDocumentLines>()
+            };
+
+            var responseDetalle = new List<BE_VentasDetalle>();
+
+            using (SqlCommand cmd = new SqlCommand(SP_GET_DETALLEVENTA_POR_CODVENTA, conn, transaction))
+            {
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.Parameters.Add(new SqlParameter("@codventa", codventa));
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    responseDetalle = (List<BE_VentasDetalle>)context.ConvertTo<BE_VentasDetalle>(reader);
+                }
+            }
+
+            var responseDetalleLote = new List<BE_VentasDetalleLote>();
+
+            using (SqlCommand cmd = new SqlCommand(SP_GET_DETALLEVENTA_LOTE_POR_CODVENTA, conn, transaction))
+            {
+                foreach (BE_VentasDetalle item in responseDetalle)
+                {
+                    if (item.manBtchNum || item.binactivat)
+                    {
+                        cmd.Parameters.Clear();
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@coddetalle", item.coddetalle));
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            responseDetalleLote = (List<BE_VentasDetalleLote>)context.ConvertTo<BE_VentasDetalleLote>(reader);
+                        }
+
+                        responseDetalle.Find(xFila => xFila.coddetalle == item.coddetalle).listVentasDetalleLotes = responseDetalleLote;
+                    }
+                }
+            }
+
+            foreach (BE_VentasDetalle item in responseDetalle)
+            {
+                var linea = new SapDocumentLines
+                {
+                    ItemCode = item.codproducto,
+                    ItemDescription = item.nombreproducto,
+                    Quantity = item.cantidad,
+                    UnitPrice = item.preciounidad,
+                    TaxCode = "IGV",
+                    AccountCode = "20111001",
+                    WarehouseCode = response.codalmacen,
+                    CostingCode = "CAMA",
+                    CostingCode2 = "AMBU",
+                    CostingCode3 = "FARM",
+                    CostingCode4 = "GESO",
+                    BatchNumbers = new List<SapBatchNumbers>(),
+                    DocumentLinesBinAllocations = new List<SapBinAllocations>()
+                };
+
+                if (item.listVentasDetalleLotes != null)
+                {
+                    if (item.listVentasDetalleLotes.Count > 0)
+                    {
+                        foreach (BE_VentasDetalleLote itemLote in item.listVentasDetalleLotes)
+                        {
+                            var lineaLote = new SapBatchNumbers
+                            {
+                                Quantity = itemLote.cantidad,
+                                BatchNumber = itemLote.lote
+                            };
+
+                            sapBatchNumbers.Add(lineaLote);
+
+                            if (itemLote.ubicacion != null || itemLote.ubicacion != 0)
+                            {
+                                var lineaUbicacion = new SapBinAllocations
+                                {
+                                    BinAbsEntry = int.Parse(itemLote.ubicacion.ToString()),
+                                    Quantity = itemLote.cantidad,
+                                    SerialAndBatchNumbersBaseLine = 0
+                                };
+                                sapBinAllocations.Add(lineaUbicacion);
+                            }
+                        }
+
+                        linea.BatchNumbers = sapBatchNumbers;
+                        linea.DocumentLinesBinAllocations = sapBinAllocations;
+                    }
+                }
+
+                document.DocumentLines.Add(linea);
+            }
+
+            try
+            {
+                cadena = "Invoices";
+                data = await _connectServiceLayer.PostAsyncSBA<SapBaseResponse<SapDocument>>(cadena, document);
+
+                if (data.DocEntry != 0)
+                {
+                    vResultadoTransaccion.IdRegistro = 0;
+                    vResultadoTransaccion.ResultadoCodigo = 0;
+                    vResultadoTransaccion.ResultadoDescripcion = "COMPROBANTE ENVIADO A SAP CORRECTAMENTE.";
+                }
+                else
+                {
+                    transaction.Rollback();
+                    vResultadoTransaccion.IdRegistro = -1;
+                    vResultadoTransaccion.ResultadoCodigo = -1;
+                    vResultadoTransaccion.ResultadoDescripcion = "ERROR AL ENVIAR EL COMPROBANTE A SAP.";
+                    //return vResultadoTransaccion;
+                }
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
+            }
+
+            #endregion
+
+            return vResultadoTransaccion;
+
+        }
+
+        private long Metodo_Registrar_FB(string pCodcomprobante, string pTipoCodigo_BarraHash, string pTipoOtorgamiento, ref string pXML)
+        {
+
+            pXML = string.Empty;
+            string wTipoComp_TCI = "";
+            //pTipoCodigo_BarraHash; '"1" 'Se envía "0" si se desea obtener el código de barras; se envía "1" si se desea obtener el código hash.
+            //pTipoOtorgamiento;     '"1" 'Se envía "0" si se otorgará manualmente, se envía "1" si se otorgará automáticamente
+
+            ComprobanteElectronicoRepository CPERepository = new ComprobanteElectronicoRepository(context, _configuration);
+            ResultadoTransaccion<BE_ComprobanteElectronico> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronico>();
+
+            if (pCodcomprobante.Substring(0, 1) == "F" || pCodcomprobante.Substring(0, 1) == "B")
+            {
+                //wNumError = zFarmacia.Sp_ComprobantesElectronicosLOG_XML_Cab(wCodcomprobante, 0)
+                vResultadoTransaccion = CPERepository.GetComprobantesElectronicosXml(pCodcomprobante, 0).Result;
+            }
+            else if (pCodcomprobante.Substring(0, 1) == "C" || pCodcomprobante.Substring(0, 1) == "D")
+            {
+                //wNumError = zFarmacia.Sp_NotaElectronicaLOG_XML(wCodcomprobante, 0)
+            }
+
+            //' ------------------- Invocación del Web Service
+
+            string secuencia = "\r";
+            var CPTCI_XML = new ComprobanteElectronicaTCIXml();
+            string XML_Cabecera = CPTCI_XML.f_ENComprobante_LOG(vResultadoTransaccion.dataList.ToList());
+
+            if (XML_Cabecera != "")
+            {
+                string Metodo;
+                Metodo = "";
+                Metodo = Metodo + "<?xml version= " + "1.0" + " encoding= " + "utf-8" + "?> " + secuencia;
+                Metodo = Metodo + "<soap:Envelope xmlns:xsi=" + "http://www.w3.org/2001/XMLSchema-instance" + " xmlns:xsd=" + "http://www.w3.org/2001/XMLSchema" + " ";
+                Metodo = Metodo + " xmlns:soap=" + "http://schemas.xmlsoap.org/soap/envelope/" + ">" + secuencia +
+                        "<soap:Body>" + secuencia +
+                            "<Registrar xmlns=" + "http://tempuri.org/" + ">" + secuencia +
+                                "<oGeneral>" + secuencia + XML_Cabecera + "</oGeneral>" + secuencia +
+                                "<oTipoComprobante>" + wTipoComp_TCI + "</oTipoComprobante>" + secuencia +
+                                "<Cadena></Cadena>" + secuencia +
+                                "<TipoCodigo>" + pTipoCodigo_BarraHash + "</TipoCodigo>" + secuencia +
+                                "<CogigoBarras></CogigoBarras>" + secuencia +
+                                "<CogigoHash></CogigoHash>" + secuencia +
+                                "<Otorgar>" + pTipoOtorgamiento.ToString() + "</Otorgar>" + secuencia +
+                                "<IdComprobanteCliente>0</IdComprobanteCliente>" + secuencia +
+                            "</Registrar>" + secuencia +
+                        "</soap:Body>" + secuencia +
+                    "</soap:Envelope>";
+                pXML = Metodo;
+            }
+            else
+            {
+                pXML = "";
+                return -3; // 'Error al construir XML
+            }
+
+            return 0;
+
+        }
+
         public async Task<ResultadoTransaccion<BE_ComprobanteElectronicoPrint>> GetComprobanteElectroncioCodVenta(string codComprobante,
-            int estadoRegistro, int estadoCdr,string fechaIni,string fechaFin,string codSistema,string tipoCompsunat,string tipoCompcsf,string codComprobanteElec, int orden)
+            int estadoRegistro, int estadoCdr, string fechaIni, string fechaFin, string codSistema, string tipoCompsunat, string tipoCompcsf, string codComprobanteElec, int orden)
         {
             ResultadoTransaccion<BE_ComprobanteElectronicoPrint> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronicoPrint>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
@@ -1260,15 +1680,15 @@ namespace Net.Data
                     using (SqlCommand cmd = new SqlCommand(SP_POST_COMPROBANTE_ELECTRONICO_POR_CODCOMPROBANTE_TK, conn))
                     {
                         cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                        cmd.Parameters.Add(new SqlParameter("@codcomprobantepk", codComprobante)); 
-                        cmd.Parameters.Add(new SqlParameter("@estadoregistro", estadoRegistro)); 
-                        cmd.Parameters.Add(new SqlParameter("@estadocdr", estadoCdr)); 
-                        cmd.Parameters.Add(new SqlParameter("@fechaini", fechaIni)); 
-                        cmd.Parameters.Add(new SqlParameter("@fechafin", fechaFin)); 
-                        cmd.Parameters.Add(new SqlParameter("@codsistema", codSistema)); 
-                        cmd.Parameters.Add(new SqlParameter("@tipocompsunat", tipoCompsunat)); 
-                        cmd.Parameters.Add(new SqlParameter("@tipocompcsf", tipoCompcsf)); 
-                        cmd.Parameters.Add(new SqlParameter("@codcomprobanteelec", codComprobanteElec)); 
+                        cmd.Parameters.Add(new SqlParameter("@codcomprobantepk", codComprobante));
+                        cmd.Parameters.Add(new SqlParameter("@estadoregistro", estadoRegistro));
+                        cmd.Parameters.Add(new SqlParameter("@estadocdr", estadoCdr));
+                        cmd.Parameters.Add(new SqlParameter("@fechaini", fechaIni));
+                        cmd.Parameters.Add(new SqlParameter("@fechafin", fechaFin));
+                        cmd.Parameters.Add(new SqlParameter("@codsistema", codSistema));
+                        cmd.Parameters.Add(new SqlParameter("@tipocompsunat", tipoCompsunat));
+                        cmd.Parameters.Add(new SqlParameter("@tipocompcsf", tipoCompcsf));
+                        cmd.Parameters.Add(new SqlParameter("@codcomprobanteelec", codComprobanteElec));
                         cmd.Parameters.Add(new SqlParameter("@orden", orden));
 
                         BE_ComprobanteElectronicoPrint response = new BE_ComprobanteElectronicoPrint();
@@ -1284,7 +1704,7 @@ namespace Net.Data
                                 response.tipo_otorgamiento = ((reader["tipo_otorgamiento"]) is DBNull) ? string.Empty : reader["tipo_otorgamiento"].ToString().Trim();
                                 response.estado_cdr = ((reader["estado_cdr"]) is DBNull) ? string.Empty : reader["estado_cdr"].ToString().Trim();
                                 response.flg_confirma = ((reader["flg_confirma"]) is DBNull) ? false : (bool)reader["flg_confirma"];
-                                response.codigobarra = ((reader["codigobarra"]) is DBNull) ? null :  (Byte[])reader["codigobarra"];
+                                response.codigobarra = ((reader["codigobarra"]) is DBNull) ? null : (Byte[])reader["codigobarra"];
                                 response.fecha_registro_sis = ((reader["fecha_registro_sis"]) is DBNull) ? DateTime.MinValue : (DateTime)reader["fecha_registro_sis"];
                                 response.tipo_comprobante = ((reader["tipo_comprobante"]) is DBNull) ? string.Empty : reader["tipo_comprobante"].ToString().Trim();
                                 response.ruc_emisor = ((reader["ruc_emisor"]) is DBNull) ? string.Empty : reader["ruc_emisor"].ToString().Trim();
@@ -1311,7 +1731,161 @@ namespace Net.Data
 
         }
 
-        public async Task<ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint>> GetComprobanteElectroncioLogXmlCab_print(string codcomprobante,string maquina,
+        public async Task<ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint>> GetComprobanteElectroncioLogXmlCab(string codcomprobante, string maquina,
+          int idusuario, int orden)
+        {
+            ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint>();
+            _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
+
+            vResultadoTransaccion.NombreMetodo = _metodoName;
+            vResultadoTransaccion.NombreAplicacion = _aplicacionName;
+
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_cnx))
+                {
+                    using (SqlCommand cmd = new SqlCommand(SP_POST_COMPROBANTE_ELECTRONICO_LOG_XML_CAB, conn))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@codcomprobante", codcomprobante));
+                        cmd.Parameters.Add(new SqlParameter("@maquina", maquina));
+                        cmd.Parameters.Add(new SqlParameter("@idusuario", idusuario));
+                        cmd.Parameters.Add(new SqlParameter("@orden", orden));
+
+                        List<BE_ComprobanteElectronicoLogXmlCabPrint> lista = new List<BE_ComprobanteElectronicoLogXmlCabPrint>();
+                        BE_ComprobanteElectronicoLogXmlCabPrint response;
+
+                        await conn.OpenAsync();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                response = new BE_ComprobanteElectronicoLogXmlCabPrint();
+                                response.codcomprobante = ((reader["codcomprobante"]) is DBNull) ? string.Empty : reader["codcomprobante"].ToString().Trim();
+                                response.codcomprobante_e = ((reader["codcomprobante_e"]) is DBNull) ? string.Empty : reader["codcomprobante_e"].ToString().Trim();
+                                response.tipoplantilla = ((reader["tipoplantilla"]) is DBNull) ? string.Empty : reader["tipoplantilla"].ToString().Trim();
+                                response.tipocomp_sunat = ((reader["tipocomp_sunat"]) is DBNull) ? string.Empty : reader["tipocomp_sunat"].ToString().Trim();
+                                response.tipocomp_tci = ((reader["tipocomp_tci"]) is DBNull) ? string.Empty : reader["tipocomp_tci"].ToString().Trim();
+                                response.estado = ((reader["estado"]) is DBNull) ? string.Empty : reader["estado"].ToString().Trim();
+                                response.nombreestado = ((reader["nombreestado"]) is DBNull) ? string.Empty : reader["nombreestado"].ToString().Trim();
+                                response.codtipocliente = ((reader["codtipocliente"]) is DBNull) ? string.Empty : reader["codtipocliente"].ToString().Trim();
+                                response.nombreestado = ((reader["nombreestado"]) is DBNull) ? string.Empty : reader["nombreestado"].ToString().Trim();
+                                response.codtipocliente = ((reader["codtipocliente"]) is DBNull) ? string.Empty : reader["codtipocliente"].ToString().Trim();
+                                response.tipomov_vta = ((reader["tipomov_vta"]) is DBNull) ? string.Empty : reader["tipomov_vta"].ToString().Trim();
+                                response.codventa = ((reader["codventa"]) is DBNull) ? string.Empty : reader["codventa"].ToString().Trim();
+                                response.fechaemision = ((reader["fechaemision"]) is DBNull) ? DateTime.MinValue : Convert.ToDateTime(reader["fechaemision"]);
+                                response.anombrede = ((reader["anombrede"]) is DBNull) ? string.Empty : reader["anombrede"].ToString().Trim();
+                                response.direccion = ((reader["direccion"]) is DBNull) ? string.Empty : reader["direccion"].ToString().Trim();
+                                response.ruc = ((reader["ruc"]) is DBNull) ? string.Empty : reader["ruc"].ToString().Trim();
+                                response.tipdocidentidad_sunat = ((reader["tipdocidentidad_sunat"]) is DBNull) ? string.Empty : reader["tipdocidentidad_sunat"].ToString().Trim();
+                                response.ruc_sunat = ((reader["ruc_sunat"]) is DBNull) ? string.Empty : reader["ruc_sunat"].ToString().Trim();
+                                response.receptor_correo = ((reader["receptor_correo"]) is DBNull) ? string.Empty : reader["receptor_correo"].ToString().Trim();
+                                response.empresa_ruc = ((reader["empresa_ruc"]) is DBNull) ? string.Empty : reader["empresa_ruc"].ToString().Trim();
+                                response.empresa_tipodocidentidad = ((reader["empresa_tipodocidentidad"]) is DBNull) ? string.Empty : reader["empresa_tipodocidentidad"].ToString().Trim();
+                                response.empresa_nombre = ((reader["empresa_nombre"]) is DBNull) ? string.Empty : reader["empresa_nombre"].ToString().Trim();
+                                response.empresa_direccion = ((reader["empresa_direccion"]) is DBNull) ? string.Empty : reader["empresa_direccion"].ToString().Trim();
+                                response.empresa_telefono = ((reader["empresa_telefono"]) is DBNull) ? string.Empty : reader["empresa_telefono"].ToString().Trim();
+                                response.concepto = ((reader["concepto"]) is DBNull) ? string.Empty : reader["concepto"].ToString().Trim();
+                                response.codatencion = ((reader["codatencion"]) is DBNull) ? string.Empty : reader["codatencion"].ToString().Trim();
+                                response.codpaciente = ((reader["codpaciente"]) is DBNull) ? string.Empty : reader["codpaciente"].ToString().Trim();
+                                response.nombrepaciente = ((reader["nombrepaciente"]) is DBNull) ? string.Empty : reader["nombrepaciente"].ToString().Trim();
+                                response.nombretitular = ((reader["nombretitular"]) is DBNull) ? string.Empty : reader["nombretitular"].ToString().Trim();
+                                response.nombrecia = ((reader["nombrecia"]) is DBNull) ? string.Empty : reader["nombrecia"].ToString().Trim();
+                                response.codpoliza = ((reader["codpoliza"]) is DBNull) ? string.Empty : reader["codpoliza"].ToString().Trim();
+                                response.observaciones = ((reader["observaciones"]) is DBNull) ? string.Empty : reader["observaciones"].ToString().Trim();
+                                response.texto1 = ((reader["texto1"]) is DBNull) ? string.Empty : reader["texto1"].ToString().Trim();
+                                response.suc_direccion = ((reader["suc_direccion"]) is DBNull) ? string.Empty : reader["suc_direccion"].ToString().Trim();
+                                response.tipopagotxt = ((reader["tipopagotxt"]) is DBNull) ? string.Empty : reader["tipopagotxt"].ToString().Trim();
+                                response.c_moneda = ((reader["c_moneda"]) is DBNull) ? string.Empty : reader["c_moneda"].ToString().Trim();
+                                response.c_nombremoneda = ((reader["c_nombremoneda"]) is DBNull) ? string.Empty : reader["c_nombremoneda"].ToString().Trim();
+                                response.c_simbolomoneda = ((reader["c_simbolomoneda"]) is DBNull) ? string.Empty : reader["c_simbolomoneda"].ToString().Trim();
+                                response.c_montodsctoplan = ((reader["c_montodsctoplan"]) is DBNull) ? 0 : (decimal)reader["c_montodsctoplan"];
+                                response.c_montoafecto = ((reader["c_montoafecto"]) is DBNull) ? 0 : (decimal)reader["c_montoafecto"];
+                                response.c_montoinafecto = ((reader["c_montoinafecto"]) is DBNull) ? 0 : (decimal)reader["c_montoinafecto"];
+                                response.c_montoexonerado = ((reader["c_montoexonerado"]) is DBNull) ? 0 : (decimal)reader["c_montoexonerado"];
+                                response.c_montoigv = ((reader["c_montoigv"]) is DBNull) ? 0 : (decimal)reader["c_montoigv"];
+                                response.c_montoneto = ((reader["c_montoneto"]) is DBNull) ? 0 : (decimal)reader["c_montoneto"];
+                                response.porcentajeimpuesto = ((reader["porcentajeimpuesto"]) is DBNull) ? 0 : (decimal)reader["porcentajeimpuesto"];
+                                response.porcentajecoaseguro = ((reader["porcentajecoaseguro"]) is DBNull) ? 0 : (decimal)reader["porcentajecoaseguro"];
+                                response.flg_gratuito = ((reader["flg_gratuito"]) is DBNull) ? string.Empty : (string)reader["flg_gratuito"];
+                                //detalle:
+                                response.d_orden = ((reader["d_orden"]) is DBNull) ? string.Empty : (string)reader["d_orden"];
+                                response.d_unidad = ((reader["d_unidad"]) is DBNull) ? string.Empty : (string)reader["d_unidad"];
+                                response.d_codproducto = ((reader["d_codproducto"]) is DBNull) ? string.Empty : (string)reader["d_codproducto"];
+                                response.nombreproducto = ((reader["nombreproducto"]) is DBNull) ? string.Empty : (string)reader["nombreproducto"];
+                                response.d_cant_sunat = ((reader["d_cant_sunat"]) is DBNull) ? 0 : (decimal)reader["d_cant_sunat"];
+                                response.d_stockfraccion = ((reader["d_stockfraccion"]) is DBNull) ? 0 : (int)reader["d_stockfraccion"];
+                                response.d_cantidad = ((reader["d_cantidad"]) is DBNull) ? 0 : (int)reader["d_cantidad"];
+                                response.d_cantidad_fraccion = ((reader["d_cantidad_fraccion"]) is DBNull) ? 0 : (int)reader["d_cantidad_fraccion"];
+                                response.d_valorVVP = ((reader["d_valorVVP"]) is DBNull) ? 0 : (decimal)reader["d_valorVVP"];
+                                response.d_precioventaPVP = ((reader["d_codproducto"]) is DBNull) ? 0 : (decimal)reader["d_precioventaPVP"];
+                                response.d_porcdctoproducto = ((reader["d_porcdctoproducto"]) is DBNull) ? 0 : (decimal)reader["d_porcdctoproducto"];
+                                response.d_porcdctoplan = ((reader["d_porcdctoplan"]) is DBNull) ? 0 : (decimal)reader["d_porcdctoplan"];
+                                response.d_preciounidadcondcto = ((reader["d_preciounidadcondcto"]) is DBNull) ? 0 : (decimal)reader["d_preciounidadcondcto"];
+                                response.d_montototal = ((reader["d_montototal"]) is DBNull) ? 0 : (decimal)reader["d_montototal"];
+                                response.d_montopaciente = ((reader["d_montopaciente"]) is DBNull) ? 0 : (decimal)reader["d_montopaciente"];
+                                response.d_montoaseguradora = ((reader["d_montoaseguradora"]) is DBNull) ? 0 : (decimal)reader["d_montoaseguradora"];
+                                //detalle_sunat:
+                                response.d_ventaunitario_sinigv = ((reader["d_ventaunitario_sinigv"]) is DBNull) ? 0 : (decimal)reader["d_ventaunitario_sinigv"];
+                                response.d_ventaunitario_conigv = ((reader["d_ventaunitario_conigv"]) is DBNull) ? 0 : (decimal)reader["d_ventaunitario_conigv"];
+                                response.d_dscto_sinigv = ((reader["d_dscto_sinigv"]) is DBNull) ? 0 : (decimal)reader["d_dscto_sinigv"];
+                                response.d_dscto_conigv = ((reader["d_dscto_conigv"]) is DBNull) ? 0 : (decimal)reader["d_dscto_conigv"];
+                                response.d_total_sinigv = ((reader["d_total_sinigv"]) is DBNull) ? 0 : (decimal)reader["d_total_sinigv"];
+                                response.d_total_conigv = ((reader["d_total_conigv"]) is DBNull) ? 0 : (decimal)reader["d_total_conigv"];
+                                response.d_total_sinigv2 = ((reader["d_total_sinigv2"]) is DBNull) ? 0 : (decimal)reader["d_total_sinigv2"];
+                                response.d_montoigv = ((reader["d_montoigv"]) is DBNull) ? 0 : (decimal)reader["d_montoigv"];
+                                response.d_determinante = ((reader["d_determinante"]) is DBNull) ? string.Empty : (string)reader["d_determinante"];
+                                response.d_codigotipoprecio = ((reader["d_codigotipoprecio"]) is DBNull) ? string.Empty : (string)reader["d_codigotipoprecio"];
+                                response.d_afectacionigv = ((reader["d_afectacionigv"]) is DBNull) ? string.Empty : (string)reader["d_afectacionigv"];
+                                response.d_montobase = ((reader["d_montobase"]) is DBNull) ? 0 : (decimal)reader["d_montobase"];
+                                response.tipo_operacion = ((reader["tipo_operacion"]) is DBNull) ? string.Empty : (string)reader["tipo_operacion"];
+                                response.hora_emision = ((reader["hora_emision"]) is DBNull) ? string.Empty : (string)reader["hora_emision"];
+                                response.total_impuesto = ((reader["total_impuesto"]) is DBNull) ? 0 : (decimal)reader["total_impuesto"];
+                                response.total_valorventa = ((reader["total_valorventa"]) is DBNull) ? 0 : (decimal)reader["total_valorventa"];
+                                response.total_precioventa = ((reader["total_precioventa"]) is DBNull) ? 0 : (decimal)reader["total_precioventa"];
+                                response.vs_ubl = ((reader["vs_ubl"]) is DBNull) ? string.Empty : (string)reader["vs_ubl"];
+                                response.mt_total = ((reader["mt_total"]) is DBNull) ? 0 : (decimal)reader["mt_total"];
+                                response.mtg_Base = ((reader["mtg_Base"]) is DBNull) ? 0 : (decimal)reader["mtg_Base"];
+                                response.mtg_ValorImpuesto = ((reader["mtg_ValorImpuesto"]) is DBNull) ? 0 : (decimal)reader["mtg_ValorImpuesto"];
+                                response.mtg_Porcentaje = ((reader["mtg_Porcentaje"]) is DBNull) ? 0 : (decimal)reader["mtg_Porcentaje"];
+                                response.d_dscto_unitario = ((reader["d_dscto_unitario"]) is DBNull) ? 0 : (decimal)reader["d_dscto_unitario"];
+                                response.d_total_condsctoigv = ((reader["d_total_condsctoigv"]) is DBNull) ? 0 : (decimal)reader["d_total_condsctoigv"];
+                                response.d_dscto_montobase = ((reader["d_dscto_montobase"]) is DBNull) ? 0 : (decimal)reader["d_dscto_montobase"];
+                                response.CodigoEstabSUNAT = ((reader["CodigoEstabSUNAT"]) is DBNull) ? string.Empty : (string)reader["CodigoEstabSUNAT"];
+                                response.CodDistrito = ((reader["CodDistrito"]) is DBNull) ? string.Empty : (string)reader["CodDistrito"];
+                                response.forma_pago = ((reader["forma_pago"]) is DBNull) ? string.Empty : (string)reader["forma_pago"];
+                                response.cod_tributo = ((reader["cod_tributo"]) is DBNull) ? string.Empty : (string)reader["cod_tributo"];
+                                response.cod_afectacionIGV = ((reader["cod_afectacionIGV"]) is DBNull) ? string.Empty : (string)reader["cod_afectacionIGV"];
+                                response.des_tributo = ((reader["des_tributo"]) is DBNull) ? string.Empty : (string)reader["des_tributo"];
+                                response.cod_UN = ((reader["cod_UN"]) is DBNull) ? string.Empty : (string)reader["cod_UN"];
+                                response.codProductoSUNAT = ((reader["CodProductoSUNAT"]) is DBNull) ? string.Empty : (string)reader["CodProductoSUNAT"];
+                                response.cuadre = ((reader["cuadre"]) is DBNull) ? string.Empty : (string)reader["cuadre"];
+                                lista.Add(response);
+                            }
+                        }
+
+                        vResultadoTransaccion.IdRegistro = 0;
+                        vResultadoTransaccion.ResultadoCodigo = 0;
+                        vResultadoTransaccion.ResultadoDescripcion = string.Format("Registros Totales {0}", lista.Count);
+                        vResultadoTransaccion.dataList = lista;
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
+            }
+
+            return vResultadoTransaccion;
+
+        }
+
+        public async Task<ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint>> GetComprobanteElectroncioLogXmlCab_print(string codcomprobante, string maquina,
             int idusuario, int orden)
         {
             ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronicoLogXmlCabPrint>();
@@ -1343,7 +1917,7 @@ namespace Net.Data
                             while (await reader.ReadAsync())
                             {
                                 response = new BE_ComprobanteElectronicoLogXmlCabPrint();
-                                response.codcomprobante  = ((reader["codcomprobante"]) is DBNull) ? string.Empty : reader["codcomprobante"].ToString().Trim();
+                                response.codcomprobante = ((reader["codcomprobante"]) is DBNull) ? string.Empty : reader["codcomprobante"].ToString().Trim();
                                 response.codcomprobante_e = ((reader["codcomprobante_e"]) is DBNull) ? string.Empty : reader["codcomprobante_e"].ToString().Trim();
                                 response.tipoplantilla = ((reader["tipoplantilla"]) is DBNull) ? string.Empty : reader["tipoplantilla"].ToString().Trim();
                                 response.tipocomp_sunat = ((reader["tipocomp_sunat"]) is DBNull) ? string.Empty : reader["tipocomp_sunat"].ToString().Trim();
@@ -1401,7 +1975,7 @@ namespace Net.Data
                                 response.d_cantidad = ((reader["d_cantidad"]) is DBNull) ? 0 : (int)reader["d_cantidad"];
                                 response.d_cantidad_fraccion = ((reader["d_cantidad_fraccion"]) is DBNull) ? 0 : (int)reader["d_cantidad_fraccion"];
                                 response.d_valorVVP = ((reader["d_valorVVP"]) is DBNull) ? 0 : (decimal)reader["d_valorVVP"];
-                                response.d_precioventaPVP = ((reader["d_codproducto"]) is DBNull) ? 0: (decimal)reader["d_precioventaPVP"];
+                                response.d_precioventaPVP = ((reader["d_codproducto"]) is DBNull) ? 0 : (decimal)reader["d_precioventaPVP"];
                                 response.d_porcdctoproducto = ((reader["d_porcdctoproducto"]) is DBNull) ? 0 : (decimal)reader["d_porcdctoproducto"];
                                 response.d_porcdctoplan = ((reader["d_porcdctoplan"]) is DBNull) ? 0 : (decimal)reader["d_porcdctoplan"];
                                 response.d_preciounidadcondcto = ((reader["d_preciounidadcondcto"]) is DBNull) ? 0 : (decimal)reader["d_preciounidadcondcto"];
@@ -1423,27 +1997,27 @@ namespace Net.Data
                                 response.d_montobase = ((reader["d_montobase"]) is DBNull) ? 0 : (decimal)reader["d_montobase"];
                                 response.tipo_operacion = ((reader["tipo_operacion"]) is DBNull) ? string.Empty : (string)reader["tipo_operacion"];
                                 response.hora_emision = ((reader["hora_emision"]) is DBNull) ? string.Empty : (string)reader["hora_emision"];
-                                response.total_impuesto = ((reader["total_impuesto"]) is DBNull) ? 0: (decimal)reader["total_impuesto"];
-                                response.total_valorventa = ((reader["total_valorventa"]) is DBNull) ? 0: (decimal)reader["total_valorventa"];
-                                response.total_precioventa = ((reader["total_precioventa"]) is DBNull) ? 0: (decimal)reader["total_precioventa"];
-                                response.vs_ubl = ((reader["vs_ubl"]) is DBNull) ? string.Empty: (string)reader["vs_ubl"];
-                                response.mt_total = ((reader["mt_total"]) is DBNull) ? 0: (decimal)reader["mt_total"];
-                                response.mtg_Base = ((reader["mtg_Base"]) is DBNull) ? 0: (decimal)reader["mtg_Base"];
-                                response.mtg_ValorImpuesto = ((reader["mtg_ValorImpuesto"]) is DBNull) ? 0: (decimal)reader["mtg_ValorImpuesto"];
-                                response.mtg_Porcentaje = ((reader["mtg_Porcentaje"]) is DBNull) ? 0: (decimal)reader["mtg_Porcentaje"];
-                                response.d_dscto_unitario = ((reader["d_dscto_unitario"]) is DBNull) ? 0: (decimal)reader["d_dscto_unitario"];
-                                response.d_total_condsctoigv = ((reader["d_total_condsctoigv"]) is DBNull) ? 0: (decimal)reader["d_total_condsctoigv"];
-                                response.d_dscto_montobase = ((reader["d_dscto_montobase"]) is DBNull) ? 0: (decimal)reader["d_dscto_montobase"];
-                                response.CodigoEstabSUNAT = ((reader["CodigoEstabSUNAT"]) is DBNull) ? string.Empty: (string)reader["CodigoEstabSUNAT"];
-                                response.CodDistrito = ((reader["CodDistrito"]) is DBNull) ? string.Empty: (string)reader["CodDistrito"];
-                                response.forma_pago = ((reader["forma_pago"]) is DBNull) ? string.Empty: (string)reader["forma_pago"];
-                                response.cod_tributo = ((reader["cod_tributo"]) is DBNull) ? string.Empty: (string)reader["cod_tributo"];
-                                response.cod_afectacionIGV = ((reader["cod_afectacionIGV"]) is DBNull) ? string.Empty: (string)reader["cod_afectacionIGV"];
-                                response.des_tributo = ((reader["des_tributo"]) is DBNull) ? string.Empty: (string)reader["des_tributo"];
-                                response.cod_UN = ((reader["cod_UN"]) is DBNull) ? string.Empty: (string)reader["cod_UN"];
-                                response.codProductoSUNAT = ((reader["CodProductoSUNAT"]) is DBNull) ? string.Empty: (string)reader["CodProductoSUNAT"];
-                                response.cuadre = ((reader["cuadre"]) is DBNull) ? string.Empty: (string)reader["cuadre"];
-                                response.efact_sunat_resol = ((reader["efact_sunat_resol"]) is DBNull) ? string.Empty: (string)reader["efact_sunat_resol"];
+                                response.total_impuesto = ((reader["total_impuesto"]) is DBNull) ? 0 : (decimal)reader["total_impuesto"];
+                                response.total_valorventa = ((reader["total_valorventa"]) is DBNull) ? 0 : (decimal)reader["total_valorventa"];
+                                response.total_precioventa = ((reader["total_precioventa"]) is DBNull) ? 0 : (decimal)reader["total_precioventa"];
+                                response.vs_ubl = ((reader["vs_ubl"]) is DBNull) ? string.Empty : (string)reader["vs_ubl"];
+                                response.mt_total = ((reader["mt_total"]) is DBNull) ? 0 : (decimal)reader["mt_total"];
+                                response.mtg_Base = ((reader["mtg_Base"]) is DBNull) ? 0 : (decimal)reader["mtg_Base"];
+                                response.mtg_ValorImpuesto = ((reader["mtg_ValorImpuesto"]) is DBNull) ? 0 : (decimal)reader["mtg_ValorImpuesto"];
+                                response.mtg_Porcentaje = ((reader["mtg_Porcentaje"]) is DBNull) ? 0 : (decimal)reader["mtg_Porcentaje"];
+                                response.d_dscto_unitario = ((reader["d_dscto_unitario"]) is DBNull) ? 0 : (decimal)reader["d_dscto_unitario"];
+                                response.d_total_condsctoigv = ((reader["d_total_condsctoigv"]) is DBNull) ? 0 : (decimal)reader["d_total_condsctoigv"];
+                                response.d_dscto_montobase = ((reader["d_dscto_montobase"]) is DBNull) ? 0 : (decimal)reader["d_dscto_montobase"];
+                                response.CodigoEstabSUNAT = ((reader["CodigoEstabSUNAT"]) is DBNull) ? string.Empty : (string)reader["CodigoEstabSUNAT"];
+                                response.CodDistrito = ((reader["CodDistrito"]) is DBNull) ? string.Empty : (string)reader["CodDistrito"];
+                                response.forma_pago = ((reader["forma_pago"]) is DBNull) ? string.Empty : (string)reader["forma_pago"];
+                                response.cod_tributo = ((reader["cod_tributo"]) is DBNull) ? string.Empty : (string)reader["cod_tributo"];
+                                response.cod_afectacionIGV = ((reader["cod_afectacionIGV"]) is DBNull) ? string.Empty : (string)reader["cod_afectacionIGV"];
+                                response.des_tributo = ((reader["des_tributo"]) is DBNull) ? string.Empty : (string)reader["des_tributo"];
+                                response.cod_UN = ((reader["cod_UN"]) is DBNull) ? string.Empty : (string)reader["cod_UN"];
+                                response.codProductoSUNAT = ((reader["CodProductoSUNAT"]) is DBNull) ? string.Empty : (string)reader["CodProductoSUNAT"];
+                                response.cuadre = ((reader["cuadre"]) is DBNull) ? string.Empty : (string)reader["cuadre"];
+                                response.efact_sunat_resol = ((reader["efact_sunat_resol"]) is DBNull) ? string.Empty : (string)reader["efact_sunat_resol"];
                                 lista.Add(response);
                             }
                         }
@@ -1475,7 +2049,7 @@ namespace Net.Data
 
             vResultadoTransaccion.NombreMetodo = _metodoName;
             vResultadoTransaccion.NombreAplicacion = _aplicacionName;
-          
+
             try
             {
                 using (SqlConnection conn = new SqlConnection(_cnx))
@@ -1503,7 +2077,8 @@ namespace Net.Data
                                 response.nombreestado_cdr = ((reader["nombreestado_cdr"]) is DBNull) ? string.Empty : reader["nombreestado_cdr"].ToString().Trim();
                                 response.nombreestado_otorgamiento = ((reader["nombreestado_otorgamiento"]) is DBNull) ? string.Empty : reader["nombreestado_otorgamiento"].ToString().Trim();
                                 response.mensaje = ((reader["mensaje"]) is DBNull) ? string.Empty : reader["mensaje"].ToString().Trim();
-                                if (orden.Equals("5")) { 
+                                if (orden.Equals("5"))
+                                {
                                     response.anular = ((reader["anular"]) is DBNull) ? string.Empty : reader["anular"].ToString().Trim();
                                 }
 
@@ -1530,7 +2105,7 @@ namespace Net.Data
 
         #region Vista de Impresion
 
-        public async Task<ResultadoTransaccion<MemoryStream>> GenerarPreVistaPrint(string codcomprobante, string maquina,string archivoImg, int idusuario, int orden)
+        public async Task<ResultadoTransaccion<MemoryStream>> GenerarPreVistaPrint(string codcomprobante, string maquina, string archivoImg, int idusuario, int orden)
         {
 
             ResultadoTransaccion<MemoryStream> vResultadoTransaccion = new ResultadoTransaccion<MemoryStream>();
@@ -1540,7 +2115,8 @@ namespace Net.Data
 
             string Numero = "{0:###,###,###,###.00;-###,###,###,###.00;0.00;0.00}";
 
-            if (maquina==null) {
+            if (maquina == null)
+            {
                 vResultadoTransaccion.IdRegistro = -1;
                 vResultadoTransaccion.ResultadoCodigo = -1;
                 vResultadoTransaccion.ResultadoDescripcion = "el nombre de la maquina no puede ser nulo";
@@ -1551,15 +2127,16 @@ namespace Net.Data
             {
 
                 string xRutaCodigoBarra = string.Empty;
-                
+
 
 
                 var objCPE = await GetComprobanteElectroncioCodVenta(codcomprobante, 0, 0, "", "", "", "", "", "", 1);
-                if (objCPE.data.codcomprobante !=null)
+                if (objCPE.data.codcomprobante != null)
                 {
                     var respCodigoBarra = objCPE.data.codigobarra;
-                    if (respCodigoBarra.Length == 0) { 
-                    
+                    if (respCodigoBarra.Length == 0)
+                    {
+
                     }
 
                     //Crea el directorio por si no existe
@@ -1567,7 +2144,8 @@ namespace Net.Data
                     xRutaCodigoBarra = archivoImg + codcomprobante + ".jpg";
                     File.WriteAllBytes(xRutaCodigoBarra, respCodigoBarra); //Creamos el archivo 
                 }
-                else {
+                else
+                {
                     vResultadoTransaccion.IdRegistro = -1;
                     vResultadoTransaccion.ResultadoCodigo = -1;
                     vResultadoTransaccion.ResultadoDescripcion = "El comprobante que esta intentado obtener no es electrónico.";
@@ -1581,7 +2159,7 @@ namespace Net.Data
 
                 var cabecera = data.dataList.ToList()[0];
                 var Detalle = data.dataList.ToList();
-                int xTamanio = 400 * ((Detalle.Count()==1) ? 2: Detalle.Count());
+                int xTamanio = 400 * ((Detalle.Count() == 1) ? 2 : Detalle.Count());
 
 
                 decimal pC_MontoAfecto = cabecera.c_montoafecto;
@@ -1631,7 +2209,7 @@ namespace Net.Data
                 BaseFont curier = BaseFont.CreateFont(BaseFont.COURIER, BaseFont.CP1250, true);
 
                 // Titulo
-                Font Header1= new iTextSharp.text.Font(helvetica, 8, iTextSharp.text.Font.BOLD, BaseColor.Black);
+                Font Header1 = new iTextSharp.text.Font(helvetica, 8, iTextSharp.text.Font.BOLD, BaseColor.Black);
                 Font Header2 = new iTextSharp.text.Font(curier, 10, iTextSharp.text.Font.BOLD, BaseColor.Black);
                 Font subTitulo = new iTextSharp.text.Font(helvetica, 12f, iTextSharp.text.Font.BOLD, BaseColor.Black);
                 Font parrafoNegroNegrita = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.BOLD, BaseColor.Black);
@@ -1680,7 +2258,7 @@ namespace Net.Data
                 doc.Add(tbl);
 
                 tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase(cabecera.codcomprobante_e+ "\n\n", Header1)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(cabecera.codcomprobante_e + "\n\n", Header1)) { Border = 0 };
                 c1.HorizontalAlignment = Element.ALIGN_CENTER;
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
@@ -1707,11 +2285,11 @@ namespace Net.Data
                 //}
 
                 // Generamos la Cabecera
-                tbl = new PdfPTable(new float[] { 15f,85f }) { WidthPercentage = 100 };
+                tbl = new PdfPTable(new float[] { 15f, 85f }) { WidthPercentage = 100 };
                 //Linea 1
                 c1 = new PdfPCell(new Phrase("Nombre", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(": "+cabecera.anombrede.Trim(), subHeader3)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": " + cabecera.anombrede.Trim(), subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
 
                 c1 = new PdfPCell(new Phrase("Dirección", subHeader3)) { Border = 0 };
@@ -1743,7 +2321,8 @@ namespace Net.Data
                     c1 = new PdfPCell(new Phrase(": " + cabecera.ruc_sunat.Trim(), subHeader3)) { Border = 0 };
                     tbl.AddCell(c1);
                 }
-                else {
+                else
+                {
                     c1 = new PdfPCell(new Phrase("RUC", subHeader3)) { Border = 0 };
                     tbl.AddCell(c1);
                     c1 = new PdfPCell(new Phrase(": " + cabecera.ruc_sunat.Trim(), subHeader3)) { Border = 0 };
@@ -1834,7 +2413,7 @@ namespace Net.Data
                 }
                 doc.Add(tbl);
 
-                
+
                 tbl = new PdfPTable(new float[] { 46f, 8f, 8f }) { WidthPercentage = 100 };
 
                 c1 = new PdfPCell(new Phrase("\n\n", subHeader4));
@@ -1899,7 +2478,7 @@ namespace Net.Data
                 c1 = new PdfPCell(new Phrase("\n\n")) { Border = 0 };
                 c1.Colspan = 4;
                 tbl.AddCell(c1);
-                
+
                 doc.Add(tbl);
 
                 tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
@@ -1929,7 +2508,7 @@ namespace Net.Data
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
 
-                c1 = new PdfPCell(new Phrase("Resolución Nro: "+ wResolucion + " / SUNAT", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1 = new PdfPCell(new Phrase("Resolución Nro: " + wResolucion + " / SUNAT", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
                 c1.Border = 0;
                 c1.HorizontalAlignment = Element.ALIGN_LEFT;
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
@@ -1989,7 +2568,7 @@ namespace Net.Data
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
 
-                c1 = new PdfPCell(new Phrase("Fecha de Emisión: " + cfecha.ToShortDateString()+ " Hora: "+ cfecha.ToShortTimeString(), new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1 = new PdfPCell(new Phrase("Fecha de Emisión: " + cfecha.ToShortDateString() + " Hora: " + cfecha.ToShortTimeString(), new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
                 c1.Border = 0;
                 c1.HorizontalAlignment = Element.ALIGN_LEFT;
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
@@ -2001,7 +2580,7 @@ namespace Net.Data
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
 
-                c1 = new PdfPCell(new Phrase("Estado: "+ pNombreEstado, new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1 = new PdfPCell(new Phrase("Estado: " + pNombreEstado, new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
                 c1.Border = 0;
                 c1.HorizontalAlignment = Element.ALIGN_LEFT;
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
@@ -2062,7 +2641,7 @@ namespace Net.Data
                     {
                         cmd.CommandType = System.Data.CommandType.StoredProcedure;
                         cmd.Parameters.Add(new SqlParameter("@codtabla", codTabla));
-                       
+
                         await conn.OpenAsync();
                         string nombre = string.Empty;
                         vResultadoTransaccion.ResultadoDescripcion = string.Empty;
